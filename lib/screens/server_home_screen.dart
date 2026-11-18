@@ -15,13 +15,17 @@ class ServerHomeScreen extends StatefulWidget {
 class _ServerHomeScreenState extends State<ServerHomeScreen> {
   late final MarzbanApi api = MarzbanApi(widget.server);
   int tab = 0;
+  final visited = <int>{0}; // tabs load lazily, only once opened
 
   @override
   Widget build(BuildContext context) {
+    final builders = <Widget Function()>[
+      () => UserListScreen(api: api),
+      () => StatsTab(api: api),
+      () => CoreSettingsScreen(api: api),
+    ];
     final pages = [
-      UserListScreen(api: api),
-      StatsTab(api: api),
-      CoreSettingsScreen(api: api),
+      for (var i = 0; i < builders.length; i++) visited.contains(i) ? builders[i]() : const SizedBox.shrink(),
     ];
     return Scaffold(
       appBar: AppBar(title: Text(widget.server.name), actions: [
@@ -41,7 +45,7 @@ class _ServerHomeScreenState extends State<ServerHomeScreen> {
       body: IndexedStack(index: tab, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: tab,
-        onDestinationSelected: (i) => setState(() => tab = i),
+        onDestinationSelected: (i) => setState(() { tab = i; visited.add(i); }),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.people), label: 'Users'),
           NavigationDestination(icon: Icon(Icons.speed), label: 'Stats'),

@@ -14,6 +14,7 @@ class UserListScreen extends StatefulWidget {
 }
 
 class _UserListScreenState extends State<UserListScreen> {
+  static final Map<String, DateTime> _lastBackup = {};
   List<VpnUser> users = [];
   bool loading = true;
   String? err, status;
@@ -27,8 +28,13 @@ class _UserListScreenState extends State<UserListScreen> {
     try {
       users = await widget.api.users(search: search.text.trim(), status: status);
       // auto-backup the full list (never overwrite a backup with an empty list)
-      if (search.text.trim().isEmpty && status == null && users.isNotEmpty) {
-        Storage.saveBackup(widget.api.server.id, users.map((u) => u.raw).toList());
+      // (at most once per 5 minutes so big lists don't get re-serialised on every refresh)
+      final id = widget.api.server.id;
+      final last = _lastBackup[id];
+      if (search.text.trim().isEmpty && status == null && users.isNotEmpty &&
+          (last == null || DateTime.now().difference(last).inMinutes >= 5)) {
+        _lastBackup[id] = DateTime.now();
+        Storage.saveBackup(id, users.map((u) => u.raw).toList());
       }
     } catch (e) {
       err = MarzbanApi.errorText(e);

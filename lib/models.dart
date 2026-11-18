@@ -3,7 +3,15 @@ class ServerConfig {
   String name, url, username, password;
   ServerConfig({required this.id, required this.name, required this.url, required this.username, required this.password});
 
-  String get baseUrl => url.trim().replaceAll(RegExp(r'/+$'), '');
+  /// Cleans common typing mistakes: missing scheme, "/8000" instead of ":8000",
+  /// trailing "/", "/dashboard" or "/api".
+  String get baseUrl {
+    var u = url.trim();
+    if (!RegExp(r'^https?://', caseSensitive: false).hasMatch(u)) u = 'https://$u';
+    u = u.replaceAllMapped(RegExp(r'^(https?://[^/:]+)/(\d{2,5})(?=/|$)'), (m) => '${m[1]}:${m[2]}');
+    u = u.replaceAll(RegExp(r'/(dashboard|api)?/*$'), '');
+    return u;
+  }
 
   Map<String, dynamic> toJson() => {'id': id, 'name': name, 'url': url, 'username': username, 'password': password};
   factory ServerConfig.fromJson(Map<String, dynamic> j) => ServerConfig(

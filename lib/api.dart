@@ -13,7 +13,11 @@ class MarzbanApi {
         receiveTimeout: const Duration(seconds: 30)));
   }
 
-  Future<void> _login() async {
+  // Several tabs can ask for a token at once: share one login request.
+  Future<void>? _loginFuture;
+  Future<void> _login() => _loginFuture ??= _doLogin().whenComplete(() => _loginFuture = null);
+
+  Future<void> _doLogin() async {
     final r = await _dio.post('/admin/token',
         data: {'username': server.username, 'password': server.password},
         options: Options(contentType: Headers.formUrlEncodedContentType));
