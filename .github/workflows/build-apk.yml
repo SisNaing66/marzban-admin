@@ -14,6 +14,10 @@ jobs:
         with: { distribution: temurin, java-version: '17' }
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
+      - name: Use fixed signing key (so new builds can update the installed app)
+        run: |
+          mkdir -p ~/.android
+          cp ci/debug.keystore ~/.android/debug.keystore
       - name: Generate Android project
         run: flutter create --platforms=android --org com.example --project-name marzban_admin .
       - name: Allow internet + http panels
