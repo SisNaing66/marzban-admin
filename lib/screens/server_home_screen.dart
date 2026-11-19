@@ -3,6 +3,7 @@ import '../api.dart';
 import '../models.dart';
 import 'user_list_screen.dart';
 import 'core_settings_screen.dart';
+import 'hosts_screen.dart';
 import 'sync_actions.dart';
 
 class ServerHomeScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class _ServerHomeScreenState extends State<ServerHomeScreen> {
     final builders = <Widget Function()>[
       () => UserListScreen(api: api),
       () => StatsTab(api: api),
+      () => HostsScreen(api: api),
       () => CoreSettingsScreen(api: api),
     ];
     final pages = [
@@ -49,6 +51,7 @@ class _ServerHomeScreenState extends State<ServerHomeScreen> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.people), label: 'Users'),
           NavigationDestination(icon: Icon(Icons.speed), label: 'Stats'),
+          NavigationDestination(icon: Icon(Icons.public), label: 'Hosts'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Core'),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../api.dart';
 import '../models.dart';
+import '../share_util.dart';
 import '../storage.dart';
 import 'create_user_screen.dart';
 
@@ -18,6 +19,7 @@ class _UserListScreenState extends State<UserListScreen> {
   List<VpnUser> users = [];
   bool loading = true;
   String? err, status;
+  int special = 0; // 0 all, 1 expiring <=3d, 2 usage >=90%
   final search = TextEditingController();
 
   @override
@@ -27,8 +29,7 @@ class _UserListScreenState extends State<UserListScreen> {
     setState(() { loading = true; err = null; });
     try {
       users = await widget.api.users(search: search.text.trim(), status: status);
-      // auto-backup the full list (never overwrite a backup with an empty list)
-      // (at most once per 5 minutes so big lists don't get re-serialised on every refresh)
+      // auto-backup the full list at most once per 5 minutes (never overwrite with an empty list)
       final id = widget.api.server.id;
       final last = _lastBackup[id];
       if (search.text.trim().isEmpty && status == null && users.isNotEmpty &&
@@ -77,6 +78,42 @@ class _UserListScreenState extends State<UserListScreen> {
     } catch (e) { _toast(MarzbanApi.errorText(e)); }
   }
 
+  /// Extend expiry (from the later of now / current expiry), add data, optionally reset usage, set active.
+  Future<void> _renew(VpnUser u) async {
+    final days = TextEditingController(text: '30');
+    final gb = TextEditingController(text: '0');
+    var reset = u.status == 'limited' || u.nearLimit;
+    final ok = await showDialog<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, set) => AlertDialog(
+      title: Text('Renew ${u.username}'),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        TextField(controller: days, keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'ရက် ထပ်တိုး', helperText: 'No-expiry user ဆိုရင် မပြောင်းပါ')),
+        TextField(controller: gb, keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'GB ထပ်တိုး', helperText: 'Unlimited user ဆိုရင် မပြောင်းပါ')),
+        CheckboxListTile(contentPadding: EdgeInsets.zero, value: reset, title: const Text('Usage ကို 0 ပြန်ထား'),
+            onChanged: (v) => set(() => reset = v ?? false)),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Renew')),
+      ],
+    )));
+    if (ok != true) return;
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final d = int.tryParse(days.text.trim()) ?? 0;
+    final addGb = double.tryParse(gb.text.trim()) ?? 0;
+    final patch = <String, dynamic>{'status': 'active'};
+    final cur = u.expire ?? 0;
+    if (d > 0 && cur != 0) patch['expire'] = (cur > now ? cur : now) + d * 86400;
+    if (addGb > 0 && u.dataLimit > 0) patch['data_limit'] = u.dataLimit + (addGb * 1073741824).round();
+    try {
+      if (reset) await widget.api.resetUsage(u.username);
+      await widget.api.updateUser(u.username, patch);
+      _toast('Renewed ${u.username}');
+      _load();
+    } catch (e) { _toast(MarzbanApi.errorText(e)); }
+  }
+
   void _show(VpnUser u) {
     final link = _fullLink(u);
     showModalBottomSheet(
@@ -87,6 +124,18 @@ class _UserListScreenState extends State<UserListScreen> {
         if (link.isNotEmpty) Container(
           color: Colors.white, padding: const EdgeInsets.all(8),
           child: QrImageView(data: link, size: 220)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, children: [
+          if (link.isNotEmpty) FilledButton.icon(
+              icon: const Icon(Icons.share), label: const Text('Share'),
+              onPressed: () => shareMessage(u, link)),
+          if (link.isNotEmpty) FilledButton.tonalIcon(
+              icon: const Icon(Icons.qr_code), label: const Text('QR image'),
+              onPressed: () async { try { await shareQrImage(u, link); } catch (e) { _toast('$e'); } }),
+          FilledButton.tonalIcon(
+              icon: const Icon(Icons.autorenew), label: const Text('Renew'),
+              onPressed: () { Navigator.pop(c); _renew(u); }),
+        ]),
         const SizedBox(height: 8),
         Wrap(spacing: 8, children: [
           if (link.isNotEmpty) OutlinedButton.icon(
@@ -108,7 +157,12 @@ class _UserListScreenState extends State<UserListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final expiringN = users.where((u) => u.expiringSoon).length;
+    final nearN = users.where((u) => u.nearLimit).length;
+    final shown = special == 1 ? users.where((u) => u.expiringSoon).toList()
+        : special == 2 ? users.where((u) => u.nearLimit).toList() : users;
+    return Scaffold(
         floatingActionButton: FloatingActionButton.extended(
           icon: const Icon(Icons.person_add), label: const Text('Create VPN User'),
           onPressed: () async {
@@ -132,17 +186,25 @@ class _UserListScreenState extends State<UserListScreen> {
               ],
               onChanged: (v) { status = v; _load(); }),
           ])),
+          SizedBox(height: 44, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12), children: [
+            for (final e in [
+              (0, 'All (${users.length})'),
+              (1, 'ကုန်ခါနီး ≤3 ရက် ($expiringN)'),
+              (2, 'Data ≥90% ($nearN)'),
+            ]) Padding(padding: const EdgeInsets.only(right: 8, top: 6, bottom: 6), child: ChoiceChip(
+              label: Text(e.$2), selected: special == e.$1, onSelected: (_) => setState(() => special = e.$1))),
+          ])),
           Expanded(child: loading
               ? const Center(child: CircularProgressIndicator())
               : err != null
                   ? Center(child: Text(err!))
-                  : RefreshIndicator(onRefresh: _load, child: users.isEmpty
+                  : RefreshIndicator(onRefresh: _load, child: shown.isEmpty
                       ? ListView(children: const [SizedBox(height: 120), Center(child: Text('No users found'))])
                       : ListView.builder(
                           padding: const EdgeInsets.only(bottom: 90),
-                          itemCount: users.length,
+                          itemCount: shown.length,
                           itemBuilder: (_, i) {
-                            final u = users[i];
+                            final u = shown[i];
                             final exp = u.expireDate;
                             final limit = u.dataLimit == 0 ? '∞' : fmtBytes(u.dataLimit);
                             return ListTile(
@@ -150,10 +212,15 @@ class _UserListScreenState extends State<UserListScreen> {
                               title: Text(u.username),
                               subtitle: Text('${fmtBytes(u.usedTraffic)} / $limit  •  '
                                   '${exp == null ? 'No expiry' : 'Expires: ${exp.toString().substring(0, 10)}'}'),
-                              trailing: Text(u.status.toUpperCase(), style: TextStyle(color: _statusColor(u.status), fontSize: 11)),
+                              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                                if (u.expiringSoon || u.nearLimit) const Icon(Icons.warning_amber, size: 18, color: Colors.orange),
+                                const SizedBox(width: 4),
+                                Text(u.status.toUpperCase(), style: TextStyle(color: _statusColor(u.status), fontSize: 11)),
+                              ]),
                               onTap: () => _show(u),
                             );
                           }))),
         ]),
       );
+  }
 }

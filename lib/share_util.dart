@@ -1,0 +1,45 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
+import 'models.dart';
+import 'settings.dart';
+
+String buildMessage(VpnUser u, String link) {
+  final exp = u.expireDate;
+  final left = u.daysLeft;
+  return AppSettings.template
+      .replaceAll('{name}', u.note.isNotEmpty ? u.note : u.username)
+      .replaceAll('{username}', u.username)
+      .replaceAll('{link}', link)
+      .replaceAll('{gb}', u.dataLimit == 0 ? 'Unlimited' : '${(u.dataLimit / 1073741824).toStringAsFixed(2)} GB')
+      .replaceAll('{expire}', exp == null ? 'No expiry' : exp.toString().substring(0, 10))
+      .replaceAll('{days}', left == null ? '∞' : '${left < 0 ? 0 : left}');
+}
+
+Future<void> shareMessage(VpnUser u, String link) => Share.share(buildMessage(u, link));
+
+/// Renders the QR (white background + margin) to a PNG and opens the share sheet
+/// (from there the user can "Save to gallery/files" or send it to a chat).
+Future<void> shareQrImage(VpnUser u, String link) async {
+  final qr = QrPainter(
+    data: link,
+    version: QrVersions.auto,
+    gapless: true,
+    eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
+    dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
+  );
+  final inner = await qr.toImage(640);
+  final rec = ui.PictureRecorder();
+  final c = Canvas(rec);
+  c.drawRect(const Rect.fromLTWH(0, 0, 720, 720), Paint()..color = Colors.white);
+  c.drawImage(inner, const Offset(40, 40), Paint());
+  final img = await rec.endRecording().toImage(720, 720);
+  final data = await img.toByteData(format: ui.ImageByteFormat.png);
+  final dir = await getTemporaryDirectory();
+  final f = File('${dir.path}/${u.username}.png');
+  await f.writeAsBytes(data!.buffer.asUint8List());
+  await Share.shareXFiles([XFile(f.path)], text: buildMessage(u, link));
+}

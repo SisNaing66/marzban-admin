@@ -88,9 +88,27 @@ class MarzbanApi {
 
   Future<void> createUserBody(Map<String, dynamic> body) => _req('POST', '/user', data: body);
   Future<void> updateUser(String username, Map<String, dynamic> patch) => _req('PUT', '/user/$username', data: patch);
+  /// Extends expiry by [days] (only if the user has an expiry) and data limit by [gb]
+  /// (only if the user has a limit). Re-activates expired/limited users.
+  Future<void> renew(VpnUser u, {required int days, required double gb}) {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final patch = <String, dynamic>{};
+    if (days > 0 && u.expire != null && u.expire! > 0) {
+      final base = u.expire! > now ? u.expire! : now;
+      patch['expire'] = base + days * 86400;
+    }
+    if (gb > 0 && u.dataLimit > 0) patch['data_limit'] = u.dataLimit + (gb * 1073741824).round();
+    if (u.status == 'expired' || u.status == 'limited') patch['status'] = 'active';
+    if (patch.isEmpty) return Future.value();
+    return updateUser(u.username, patch);
+  }
+
   Future<void> deleteUser(String username) => _req('DELETE', '/user/$username');
   Future<void> resetUsage(String username) => _req('POST', '/user/$username/reset');
   Future<void> revokeSub(String username) => _req('POST', '/user/$username/revoke_sub');
+
+  Future<Map<String, dynamic>> hosts() async => Map<String, dynamic>.from((await _req('GET', '/hosts')).data);
+  Future<void> setHosts(Map<String, dynamic> d) => _req('PUT', '/hosts', data: d);
 
   Future<Map<String, dynamic>> coreConfig() async => Map<String, dynamic>.from((await _req('GET', '/core/config')).data);
   Future<void> setCoreConfig(Map<String, dynamic> cfg) => _req('PUT', '/core/config', data: cfg);
