@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -22,10 +22,9 @@ Future<void> _shareJson(String name, Object data) async {
 }
 
 Future<Map<String, dynamic>?> _pickJson(BuildContext context) async {
-  final r = await FilePicker.platform.pickFiles(type: FileType.any, withData: true);
-  if (r == null || r.files.isEmpty) return null;
-  final bytes = r.files.single.bytes;
-  if (bytes == null) throw 'File ဖတ်လို့မရပါ';
+  final f = await openFile();
+  if (f == null) return null;
+  final bytes = await f.readAsBytes();
   final j = jsonDecode(utf8.decode(bytes));
   if (j is! Map) throw 'Backup ဖိုင် မမှန်ပါ';
   return Map<String, dynamic>.from(j);
