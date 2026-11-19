@@ -150,3 +150,17 @@ Future<void> restoreUsers(BuildContext context, MarzbanApi api) async {
   if (ok != true || !context.mounted) return;
   await _runWithProgress(context, 'Restoring users', (p) => _copyUsers(api, b.users, p));
 }
+
+/// Restore users from an in-memory list (e.g. an imported backup file). Existing users are skipped.
+Future<void> restoreUsersFromList(BuildContext context, MarzbanApi api, List<Map<String, dynamic>> users, String what) async {
+  final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+    title: const Text('Restore Users?'),
+    content: Text('Restore ${users.length} users ($what) to "${api.server.name}"? Existing users are skipped.'),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+      FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Restore')),
+    ],
+  ));
+  if (ok != true || !context.mounted) return;
+  await _runWithProgress(context, 'Restoring users', (p) => _copyUsers(api, users, p));
+}

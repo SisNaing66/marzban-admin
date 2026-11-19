@@ -9,12 +9,15 @@ class AppSettings {
   static final themeMode = ValueNotifier<ThemeMode>(ThemeMode.system);
   static String template = defaultTemplate;
   static String? pinHash;
+  static List<Map<String, dynamic>> presets = []; // {name, days, gb, price}
 
   static Future<void> load() async {
     final p = await SharedPreferences.getInstance();
     themeMode.value = ThemeMode.values[(p.getInt('theme') ?? 0).clamp(0, 2)];
     template = p.getString('template') ?? defaultTemplate;
     pinHash = p.getString('pin');
+    final pr = p.getString('presets');
+    if (pr != null) presets = (jsonDecode(pr) as List).map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
   static Future<void> setTheme(ThemeMode m) async {
@@ -26,6 +29,9 @@ class AppSettings {
     template = t;
     (await SharedPreferences.getInstance()).setString('template', t);
   }
+
+  static Future<void> savePresets() async =>
+      (await SharedPreferences.getInstance()).setString('presets', jsonEncode(presets));
 
   static String _hash(String pin) => sha256.convert(utf8.encode('mzb:$pin')).toString();
 

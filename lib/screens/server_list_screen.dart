@@ -7,17 +7,17 @@ import 'server_home_screen.dart';
 class ServerListScreen extends StatefulWidget {
   const ServerListScreen({super.key});
   @override
-  State<ServerListScreen> createState() => _ServerListScreenState();
+  State<ServerListScreen> createState() => ServerListScreenState();
 }
 
-class _ServerListScreenState extends State<ServerListScreen> {
+class ServerListScreenState extends State<ServerListScreen> {
   List<ServerConfig> servers = [];
   bool loading = true;
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() { super.initState(); reload(); }
 
-  Future<void> _load() async {
+  Future<void> reload() async {
     servers = await Storage.load();
     if (mounted) setState(() => loading = false);
   }

@@ -5,6 +5,9 @@ import 'user_list_screen.dart';
 import 'core_settings_screen.dart';
 import 'hosts_screen.dart';
 import 'sync_actions.dart';
+import 'report_screen.dart';
+import 'maintenance.dart';
+import '../backup_io.dart';
 
 class ServerHomeScreen extends StatefulWidget {
   final ServerConfig server;
@@ -36,11 +39,19 @@ class _ServerHomeScreenState extends State<ServerHomeScreen> {
             if (v == 'merge') mergeUsers(context, api);
             if (v == 'backup') backupNow(context, api);
             if (v == 'restore') restoreUsers(context, api);
+            if (v == 'report') Navigator.push(context, MaterialPageRoute(builder: (_) => ReportScreen(api: api)));
+            if (v == 'clean') cleanExpired(context, api);
+            if (v == 'export') exportServerUsers(context, api);
+            if (v == 'import') importServerUsers(context, api);
           },
           itemBuilder: (_) => const [
             PopupMenuItem(value: 'merge', child: Text('Merge Users (from another server)')),
             PopupMenuItem(value: 'backup', child: Text('Backup users now')),
             PopupMenuItem(value: 'restore', child: Text('Restore Users from backup')),
+            PopupMenuItem(value: 'export', child: Text('Export users file (.json)')),
+            PopupMenuItem(value: 'import', child: Text('Import users file (.json)')),
+            PopupMenuItem(value: 'report', child: Text('Usage report')),
+            PopupMenuItem(value: 'clean', child: Text('Clean expired users')),
           ],
         ),
       ]),

@@ -12,18 +12,20 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int tab = 0;
   final dashKey = GlobalKey<DashboardScreenState>();
+  final serversKey = GlobalKey<ServerListScreenState>();
 
   @override
   Widget build(BuildContext context) => Scaffold(
         body: IndexedStack(index: tab, children: [
           DashboardScreen(key: dashKey),
-          const ServerListScreen(),
+          ServerListScreen(key: serversKey),
           const MoreScreen(),
         ]),
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab,
           onDestinationSelected: (i) {
             if (i == 0 && tab != 0) dashKey.currentState?.refresh();
+            if (i == 1 && tab != 1) serversKey.currentState?.reload();
             setState(() => tab = i);
           },
           destinations: const [

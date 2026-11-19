@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../backup_io.dart';
 import '../settings.dart';
+import 'sales_screen.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -58,6 +60,16 @@ class _MoreScreenState extends State<MoreScreen> {
               onSelectionChanged: (s) => AppSettings.setTheme(s.first),
             ),
           ),
+          const Divider(height: 32),
+          ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.receipt_long), title: const Text('Sales'),
+              subtitle: const Text('Create/Renew ရောင်းချမှတ်တမ်းနဲ့ လစဉ်ဝင်ငွေ'),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SalesScreen()))),
+          ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.upload_file), title: const Text('Export app data'),
+              subtitle: const Text('Server စာရင်း (password ပါ!)၊ template၊ preset၊ sales ကို ဖိုင်အဖြစ် သိမ်း'),
+              onTap: () => exportAppData(context)),
+          ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.download_for_offline), title: const Text('Import app data'),
+              subtitle: const Text('ဖုန်းအသစ်မှာ ဖိုင်ကနေ ပြန်သွင်း'),
+              onTap: () async { if (await importAppData(context) && mounted) setState(() => tpl.text = AppSettings.template); }),
           const Divider(height: 32),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
