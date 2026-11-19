@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../background.dart';
 import '../backup_io.dart';
+import '../biometric.dart';
 import '../settings.dart';
 import 'sales_screen.dart';
 
@@ -24,6 +26,29 @@ class _MoreScreenState extends State<MoreScreen> {
         FilledButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('OK')),
       ],
     ));
+  }
+
+  Future<void> _toggleAlerts(bool on) async {
+    try {
+      if (on) {
+        if (!await enableAlerts()) { _toast('Notification ခွင့်ပြုချက် လိုပါတယ် (Settings > Apps > Notifications)'); return; }
+      } else {
+        await disableAlerts();
+      }
+      await AppSettings.setAlerts(on);
+    } catch (e) {
+      _toast('$e');
+    }
+    setState(() {});
+  }
+
+  Future<void> _toggleBio(bool on) async {
+    if (on) {
+      if (!await biometricAvailable()) { _toast('ဒီဖုန်းမှာ လက်ဗွေ/မျက်နှာ မသတ်မှတ်ရသေးပါ'); return; }
+      if (!await biometricAuth('လက်ဗွေ unlock ကို ဖွင့်ရန် အတည်ပြုပါ')) return;
+    }
+    await AppSettings.setBiometric(on);
+    setState(() {});
   }
 
   Future<void> _toggleLock(bool on) async {
@@ -78,6 +103,24 @@ class _MoreScreenState extends State<MoreScreen> {
             value: AppSettings.pinHash != null,
             onChanged: _toggleLock,
           ),
+          if (AppSettings.pinHash != null) SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Fingerprint unlock'),
+            subtitle: const Text('PIN အစား လက်ဗွေ/မျက်နှာနဲ့ ဖွင့်'),
+            value: AppSettings.biometric,
+            onChanged: _toggleBio,
+          ),
+          const Divider(height: 32),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Alerts (notification)'),
+            subtitle: const Text('Server offline ဖြစ်ရင်၊ user ကုန်ခါနီး/Data ၉၀% ကျော်ရင် ၁၅ မိနစ်တစ်ခါ စစ်ပြီး အသိပေး'),
+            value: AppSettings.alertsOn,
+            onChanged: _toggleAlerts,
+          ),
+          if (AppSettings.alertsOn) Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+            onPressed: () async { try { await sendTestNotification(); } catch (e) { _toast('$e'); } },
+            icon: const Icon(Icons.notifications_active), label: const Text('Test notification'))),
           const Divider(height: 32),
           Text('Message template', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),

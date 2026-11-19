@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../biometric.dart';
 import '../settings.dart';
 
 /// Shows [child] normally; shows a PIN screen at start and after the app was in the background for 30s.
@@ -43,6 +44,16 @@ class _LockScreenState extends State<_LockScreen> {
   final c = TextEditingController();
   String? err;
 
+  @override
+  void initState() {
+    super.initState();
+    if (AppSettings.biometric) WidgetsBinding.instance.addPostFrameCallback((_) => _bio());
+  }
+
+  Future<void> _bio() async {
+    if (await biometricAuth('Marzban Admin ကို ဖွင့်ရန်')) widget.onUnlock();
+  }
+
   void _try() {
     if (AppSettings.checkPin(c.text)) { widget.onUnlock(); }
     else { setState(() { err = 'PIN မှားနေပါတယ်'; c.clear(); }); }
@@ -61,6 +72,7 @@ class _LockScreenState extends State<_LockScreen> {
             decoration: InputDecoration(errorText: err, border: const OutlineInputBorder(), counterText: '')),
           const SizedBox(height: 12),
           SizedBox(width: double.infinity, child: FilledButton(onPressed: _try, child: const Text('Unlock'))),
+          if (AppSettings.biometric) TextButton.icon(onPressed: _bio, icon: const Icon(Icons.fingerprint), label: const Text('လက်ဗွေနဲ့ ဖွင့်')),
         ])))),
       );
 }

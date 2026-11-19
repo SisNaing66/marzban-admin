@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'background.dart';
 import 'screens/home_shell.dart';
 import 'screens/lock_screen.dart';
 import 'settings.dart';
@@ -6,6 +7,7 @@ import 'settings.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.load();
+  try { await initBackground(); } catch (_) {}
   runApp(const MarzbanAdminApp());
 }
 
