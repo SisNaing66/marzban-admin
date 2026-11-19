@@ -51,15 +51,6 @@ class VpnUser {
   late final bool nearLimit = status == 'active' && dataLimit > 0 && usedTraffic / dataLimit >= 0.9;
   late final String lower = username.toLowerCase();
 
-  int? get daysLeft => expireDate == null ? null : expireDate!.difference(DateTime.now()).inDays;
-  bool get expiringSoon {
-    final e = expire;
-    if (status != 'active' || e == null || e == 0) return false;
-    final left = e - DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    return left > 0 && left <= 3 * 86400;
-  }
-  bool get nearLimit => status == 'active' && dataLimit > 0 && usedTraffic >= dataLimit * 0.9;
-
   DateTime? get expireDate => (expire == null || expire == 0) ? null : DateTime.fromMillisecondsSinceEpoch(expire! * 1000);
 }
 

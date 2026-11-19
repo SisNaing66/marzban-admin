@@ -132,6 +132,9 @@ class _UserListScreenState extends State<UserListScreen> {
           if (link.isNotEmpty) FilledButton.tonalIcon(
               icon: const Icon(Icons.qr_code), label: const Text('QR image'),
               onPressed: () async { try { await shareQrImage(u, link); } catch (e) { _toast('$e'); } }),
+          if (link.isNotEmpty) FilledButton.tonalIcon(
+              icon: const Icon(Icons.download), label: const Text('Save QR'),
+              onPressed: () async { try { await saveQrToGallery(u, link); _toast('Saved to gallery'); } catch (e) { _toast('$e'); } }),
           FilledButton.tonalIcon(
               icon: const Icon(Icons.autorenew), label: const Text('Renew'),
               onPressed: () { Navigator.pop(c); _renew(u); }),
