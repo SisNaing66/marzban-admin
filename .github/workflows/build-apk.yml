@@ -18,6 +18,16 @@ jobs:
         run: |
           mkdir -p ~/.android
           cp ci/debug.keystore ~/.android/debug.keystore
+      - name: Disable Android lint tasks (lint tool crashes on some plugins)
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/disable-lint.gradle <<'EOF'
+          allprojects {
+            tasks.configureEach { t ->
+              if (t.name.startsWith("lint")) { t.enabled = false }
+            }
+          }
+          EOF
       - name: Generate Android project
         run: flutter create --platforms=android --org com.example --project-name marzban_admin .
       - name: Allow internet + http panels
