@@ -22,10 +22,14 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (authRecently()) { pausedAt = null; return; } // fingerprint dialog, not a real background
     if (s == AppLifecycleState.paused) pausedAt = DateTime.now();
-    if (s == AppLifecycleState.resumed && AppSettings.pinHash != null && pausedAt != null &&
-        DateTime.now().difference(pausedAt!).inSeconds >= 30) {
-      setState(() => locked = true);
+    if (s == AppLifecycleState.resumed) {
+      final p = pausedAt;
+      pausedAt = null;
+      if (!locked && AppSettings.pinHash != null && p != null && DateTime.now().difference(p).inSeconds >= 30) {
+        setState(() => locked = true);
+      }
     }
   }
 
@@ -52,7 +56,8 @@ class _LockScreenState extends State<_LockScreen> {
   }
 
   Future<void> _bio() async {
-    if (await biometricAuth('Marzban Admin ကို ဖွင့်ရန်')) widget.onUnlock();
+    if (!mounted) return;
+    if (await biometricAuth('Marzban Admin ကို ဖွင့်ရန်') && mounted) widget.onUnlock();
   }
 
   void _try() {
