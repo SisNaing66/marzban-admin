@@ -15,9 +15,17 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
       - name: Use fixed signing key (so new builds can update the installed app)
+        env:
+          KS: ${{ secrets.DEBUG_KEYSTORE_B64 }}
         run: |
           mkdir -p ~/.android
-          cp ci/debug.keystore ~/.android/debug.keystore
+          if [ -n "$KS" ]; then
+            echo "Signing with the private key from repository secrets"
+            echo "$KS" | base64 -d > ~/.android/debug.keystore
+          else
+            echo "No DEBUG_KEYSTORE_B64 secret: falling back to ci/debug.keystore (public key)"
+            cp ci/debug.keystore ~/.android/debug.keystore
+          fi
       - name: Disable Android lint tasks (lint tool crashes on some plugins)
         run: |
           mkdir -p ~/.gradle/init.d
