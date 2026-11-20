@@ -5,8 +5,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import 'api.dart';
+import 'health.dart';
 import 'models.dart';
+import 'settings.dart';
 import 'storage.dart';
+import 'telegram.dart';
 
 const _taskName = 'marzban-check';
 final _plugin = FlutterLocalNotificationsPlugin();
@@ -14,12 +17,32 @@ final _plugin = FlutterLocalNotificationsPlugin();
 Future<void> _initNotifications() => _plugin.initialize(
     const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')));
 
-Future<void> _notify(int id, String title, String body) => _plugin.show(
-    id, title, body,
-    const NotificationDetails(
-        android: AndroidNotificationDetails('alerts', 'Alerts',
-            channelDescription: 'Server offline and user expiry alerts',
-            importance: Importance.high, priority: Priority.high)));
+/// Local notification + (optionally) the same text to the Telegram bot.
+Future<void> _notify(int id, String title, String body) async {
+  try {
+    await _plugin.show(
+        id, title, body,
+        const NotificationDetails(
+            android: AndroidNotificationDetails('alerts', 'Alerts',
+                channelDescription: 'Server offline and user expiry alerts',
+                importance: Importance.high, priority: Priority.high)));
+  } catch (_) {}
+  if (AppSettings.tgAlerts && AppSettings.tgReady) {
+    try { await Telegram.send(AppSettings.tgToken, AppSettings.tgChat, '$title\n$body'); } catch (_) {}
+  }
+}
+
+String _stamp() => DateTime.now().toIso8601String().substring(0, 10).replaceAll('-', '');
+String _safe(String s) => s.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+
+Future<void> _sendBackup(ServerConfig s, List<VpnUser> users) => Telegram.sendFile(
+    AppSettings.tgToken, AppSettings.tgChat,
+    utf8.encode(const JsonEncoder.withIndent(' ').convert({
+      'type': 'marzban-users', 'version': 1, 'server': s.name, 'time': DateTime.now().toIso8601String(),
+      'users': users.map((u) => u.raw).toList(),
+    })),
+    'marzban-users-${_safe(s.name)}-${_stamp()}.json',
+    '${s.name}: ${users.length} users');
 
 /// Runs in a background isolate every ~15 minutes (Android's minimum).
 @pragma('vm:entry-point')
@@ -36,6 +59,7 @@ Future<void> runChecks() async {
   await _initNotifications();
   final prefs = await SharedPreferences.getInstance();
   await prefs.reload();
+  await AppSettings.load();
   final servers = await Storage.load();
   final state = Map<String, dynamic>.from(jsonDecode(prefs.getString('bg_state') ?? '{}'));
   final now = DateTime.now().millisecondsSinceEpoch;
@@ -44,15 +68,14 @@ Future<void> runChecks() async {
     final s = servers[i];
     final st = Map<String, dynamic>.from(state[s.id] ?? {});
     final api = MarzbanApi(s);
-    var down = false;
+    Map<String, dynamic>? sys;
     try {
-      await api.system().timeout(const Duration(seconds: 20));
-    } catch (_) {
-      down = true;
-    }
+      sys = await api.system().timeout(const Duration(seconds: 20));
+    } catch (_) {}
+    try { await HealthStore.add(s.id, HealthSample.fromSystem(sys)); } catch (_) {}
 
-    if (down) {
-      final fails = (st['fails'] ?? 0) + 1;
+    if (sys == null) {
+      final fails = ((st['fails'] ?? 0) as int) + 1;
       st['fails'] = fails;
       // 2 failures in a row (15-30 min) -> alert once
       if (fails >= 2 && st['down'] != true) {
@@ -65,16 +88,22 @@ Future<void> runChecks() async {
         st['down'] = false;
         await _notify(1001 + i * 3, '${s.name} back online', 'Server ပြန်ရောက်လာပြီ');
       }
-      // daily summary of expiring / near-limit users
-      final last = (st['summary'] ?? 0) as int;
-      if (now - last > 20 * 3600 * 1000) {
+      final summaryDue = now - ((st['summary'] ?? 0) as int) > 20 * 3600 * 1000;
+      final backupDue = AppSettings.tgBackup && AppSettings.tgReady && now - ((st['backup'] ?? 0) as int) > 23 * 3600 * 1000;
+      if (summaryDue || backupDue) {
         try {
-          final List<VpnUser> users = await api.users().timeout(const Duration(seconds: 40));
-          final exp = users.where((u) => u.expiringSoon).length;
-          final near = users.where((u) => u.nearLimit).length;
-          if (exp > 0 || near > 0) {
-            await _notify(1002 + i * 3, s.name, '၃ ရက်အတွင်း ကုန်မယ့် user $exp ယောက်၊ Data ၉၀% ကျော် $near ယောက်');
-            st['summary'] = now;
+          final List<VpnUser> users = await api.users().timeout(const Duration(seconds: 60));
+          if (summaryDue) {
+            final exp = users.where((u) => u.expiringSoon).length;
+            final near = users.where((u) => u.nearLimit).length;
+            if (exp > 0 || near > 0) {
+              await _notify(1002 + i * 3, s.name, '၃ ရက်အတွင်း ကုန်မယ့် user $exp ယောက်၊ Data ၉၀% ကျော် $near ယောက်');
+              st['summary'] = now;
+            }
+          }
+          if (backupDue && users.isNotEmpty) {
+            await _sendBackup(s, users);
+            st['backup'] = now;
           }
         } catch (_) {}
       }
@@ -103,4 +132,22 @@ Future<void> disableAlerts() => Workmanager().cancelByUniqueName(_taskName);
 Future<void> sendTestNotification() async {
   await _initNotifications();
   await _notify(999, 'Marzban Admin', 'Notification အလုပ်လုပ်ပါတယ် ✓');
+}
+
+/// Sends every server's users file to the Telegram bot right now. Returns a short summary.
+Future<String> telegramBackupAll() async {
+  if (!AppSettings.tgReady) throw 'Telegram token / chat id မထည့်ရသေးပါ';
+  final servers = await Storage.load();
+  var ok = 0;
+  final errs = <String>[];
+  for (final s in servers) {
+    try {
+      final users = await MarzbanApi(s).users();
+      await _sendBackup(s, users);
+      ok++;
+    } catch (e) {
+      errs.add('${s.name}: ${e is String ? e : (MarzbanApi.errorText(e))}');
+    }
+  }
+  return 'ပို့ပြီး $ok/${servers.length}${errs.isEmpty ? '' : '\n${errs.join('\n')}'}';
 }

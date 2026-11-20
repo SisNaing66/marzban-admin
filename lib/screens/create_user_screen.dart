@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../api.dart';
 import '../bulk.dart';
 import '../sales.dart';
+import '../models.dart';
 import '../settings.dart';
+import '../storage.dart';
+import 'sync_actions.dart';
 
 class CreateUserScreen extends StatefulWidget {
   final MarzbanApi api;
@@ -21,12 +24,15 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   final note = TextEditingController();
   Map<String, List<String>> inbounds = {};
   final Set<String> selected = {}; // "proto|tag"
-  bool busy = false, loadingInbounds = true;
+  bool busy = false, loadingInbounds = true, paid = true;
+  List<ServerConfig> others = [];
+  final extra = <String>{}; // ids of other servers to create the same user on
   String? err;
 
   @override
   void initState() {
     super.initState();
+    Storage.load().then((l) { if (mounted) setState(() => others = l.where((x) => x.id != widget.api.server.id).toList()); });
     widget.api.inboundTags().then((m) {
       if (!mounted) return;
       setState(() {
@@ -84,23 +90,38 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
     setState(() { busy = true; err = null; });
 
     final created = <String>[];
+    final extraErr = <String>[];
+    final extraServers = others.where((o) => extra.contains(o.id)).toList();
+    final extraApis = {for (final o in extraServers) o.id: MarzbanApi(o)};
+    final extraTags = <String, Map<String, List<String>>>{};
+    for (final o in extraServers) {
+      try { extraTags[o.id] = await extraApis[o.id]!.inboundTags(); } catch (e) { extraErr.add('${o.name}: ${MarzbanApi.errorText(e)}'); }
+    }
     final r = await runBulk<String>(context, 'Creating users', names, (s) => s, (name) async {
-      await widget.api.createUser(
+      final raw = await widget.api.createUser(
         username: name,
         expire: d > 0 ? DateTime.now().add(Duration(days: d)).millisecondsSinceEpoch ~/ 1000 : 0,
         dataLimit: (g * 1024 * 1024 * 1024).round(),
         note: note.text.trim(), inbounds: sel);
       created.add(name);
+      for (final o in extraServers) {
+        final tags = extraTags[o.id];
+        if (tags == null) continue;
+        try { await createLike(extraApis[o.id]!, raw, tags); } catch (e) {
+          extraErr.add('$name @ ${o.name}: ${e is String ? e : MarzbanApi.errorText(e)}');
+        }
+      }
     });
     if (p > 0 && created.isNotEmpty) {
       await SalesStore.add([
         for (final u in created)
-          Sale(ts: DateTime.now().millisecondsSinceEpoch ~/ 1000, server: widget.api.server.name, user: u, kind: 'create', days: d, gb: g, amount: p)
+          Sale(ts: DateTime.now().millisecondsSinceEpoch ~/ 1000, server: widget.api.server.name, user: u, kind: 'create', days: d, gb: g, amount: p, paid: paid)
       ]);
     }
     if (!mounted) return;
     setState(() => busy = false);
-    if (n > 1 || r.failed > 0) {
+    if (n > 1 || r.failed > 0 || extraErr.isNotEmpty) {
+      r.errors.addAll(extraErr);
       await showBulkResult(context, 'Create result', r, extra: created.isEmpty ? null : created.join('\n'));
     }
     if (mounted && created.isNotEmpty) Navigator.pop(context, true);
@@ -146,7 +167,16 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
         TextField(controller: price, keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: 'Price per user (optional)', helperText: 'ထည့်ရင် ရောင်းချမှတ်တမ်းထဲ မှတ်မယ်', border: OutlineInputBorder())),
         const SizedBox(height: 12),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('ပေးပြီး (Paid)'), subtitle: const Text('ပိတ်ထားရင် Sales မှာ "Unpaid" အဖြစ် မှတ်မယ်'), value: paid, onChanged: (v) => setState(() => paid = v)),
         TextField(controller: note, decoration: const InputDecoration(labelText: 'Note', border: OutlineInputBorder())),
+        if (others.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text('တခြား server တွေမှာပါ တစ်ခါတည်း ဖန်တီး', style: Theme.of(context).textTheme.titleMedium),
+          for (final o in others) CheckboxListTile(
+            dense: true, title: Text(o.name), subtitle: const Text('UUID တူအောင် ကူးထည့်မယ်'),
+            value: extra.contains(o.id),
+            onChanged: (v) => setState(() => v == true ? extra.add(o.id) : extra.remove(o.id))),
+        ],
         Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: _savePreset, icon: const Icon(Icons.bookmark_add), label: const Text('Save days/GB/price as preset'))),
         const SizedBox(height: 8),
         Text('Inbounds', style: Theme.of(context).textTheme.titleMedium),

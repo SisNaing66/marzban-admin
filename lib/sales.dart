@@ -6,13 +6,16 @@ class Sale {
   final String server, user, kind; // kind: create | renew
   final int days;
   final double gb, amount;
+  final bool paid;
   Sale({required this.ts, required this.server, required this.user, required this.kind,
-      this.days = 0, this.gb = 0, required this.amount});
+      this.days = 0, this.gb = 0, required this.amount, this.paid = true});
 
-  Map<String, dynamic> toJson() => {'ts': ts, 'server': server, 'user': user, 'kind': kind, 'days': days, 'gb': gb, 'amount': amount};
+  Sale copyWith({bool? paid}) => Sale(ts: ts, server: server, user: user, kind: kind, days: days, gb: gb, amount: amount, paid: paid ?? this.paid);
+
+  Map<String, dynamic> toJson() => {'ts': ts, 'server': server, 'user': user, 'kind': kind, 'days': days, 'gb': gb, 'amount': amount, 'paid': paid};
   factory Sale.fromJson(Map<String, dynamic> j) => Sale(
       ts: (j['ts'] as num).toInt(), server: j['server'] ?? '', user: j['user'] ?? '', kind: j['kind'] ?? '',
-      days: (j['days'] ?? 0).toInt(), gb: (j['gb'] ?? 0).toDouble(), amount: (j['amount'] ?? 0).toDouble());
+      days: (j['days'] ?? 0).toInt(), gb: (j['gb'] ?? 0).toDouble(), amount: (j['amount'] ?? 0).toDouble(), paid: j['paid'] != false);
 }
 
 class SalesStore {

@@ -6,12 +6,14 @@ import 'core_settings_screen.dart';
 import 'hosts_screen.dart';
 import 'sync_actions.dart';
 import 'report_screen.dart';
+import 'health_screen.dart';
 import 'maintenance.dart';
 import '../backup_io.dart';
 
 class ServerHomeScreen extends StatefulWidget {
   final ServerConfig server;
-  const ServerHomeScreen({super.key, required this.server});
+  final String? initialSearch;
+  const ServerHomeScreen({super.key, required this.server, this.initialSearch});
   @override
   State<ServerHomeScreen> createState() => _ServerHomeScreenState();
 }
@@ -24,7 +26,7 @@ class _ServerHomeScreenState extends State<ServerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final builders = <Widget Function()>[
-      () => UserListScreen(api: api),
+      () => UserListScreen(api: api, initialSearch: widget.initialSearch),
       () => StatsTab(api: api),
       () => HostsScreen(api: api),
       () => CoreSettingsScreen(api: api),
@@ -41,6 +43,7 @@ class _ServerHomeScreenState extends State<ServerHomeScreen> {
             if (v == 'restore') restoreUsers(context, api);
             if (v == 'report') Navigator.push(context, MaterialPageRoute(builder: (_) => ReportScreen(api: api)));
             if (v == 'clean') cleanExpired(context, api);
+            if (v == 'health') Navigator.push(context, MaterialPageRoute(builder: (_) => HealthScreen(server: widget.server)));
             if (v == 'export') exportServerUsers(context, api);
             if (v == 'import') importServerUsers(context, api);
           },
@@ -51,6 +54,7 @@ class _ServerHomeScreenState extends State<ServerHomeScreen> {
             PopupMenuItem(value: 'export', child: Text('Export users file (.json)')),
             PopupMenuItem(value: 'import', child: Text('Import users file (.json)')),
             PopupMenuItem(value: 'report', child: Text('Usage report')),
+            PopupMenuItem(value: 'health', child: Text('Health history')),
             PopupMenuItem(value: 'clean', child: Text('Clean expired users')),
           ],
         ),

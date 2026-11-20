@@ -74,19 +74,29 @@ class MarzbanApi {
     return m;
   }
 
-  Future<void> createUser({
+  /// Returns the created user as the panel reports it (includes the generated proxy ids).
+  Future<Map<String, dynamic>> createUser({
     required String username, int? expire, int dataLimit = 0, String note = '',
     String resetStrategy = 'no_reset', required Map<String, List<String>> inbounds,
   }) async {
     final proxies = {for (final p in inbounds.keys) p: <String, dynamic>{}};
-    await _req('POST', '/user', data: {
+    final r = await _req('POST', '/user', data: {
       'username': username, 'proxies': proxies, 'inbounds': inbounds,
       'expire': expire ?? 0, 'data_limit': dataLimit,
       'data_limit_reset_strategy': resetStrategy, 'status': 'active', 'note': note,
     });
+    return Map<String, dynamic>.from(r.data);
   }
 
-  Future<void> createUserBody(Map<String, dynamic> body) => _req('POST', '/user', data: body);
+  Future<Map<String, dynamic>> createUserBody(Map<String, dynamic> body) async =>
+      Map<String, dynamic>.from((await _req('POST', '/user', data: body)).data);
+
+  Future<String> accessToken() async {
+    if (_token == null) await _login();
+    return _token!;
+  }
+
+  Future<Map<String, dynamic>> coreInfo() async => Map<String, dynamic>.from((await _req('GET', '/core')).data);
   Future<void> updateUser(String username, Map<String, dynamic> patch) => _req('PUT', '/user/$username', data: patch);
   /// Extends expiry by [days] (only if the user has an expiry) and data limit by [gb]
   /// (only if the user has a limit). Re-activates expired/limited users.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
+import '../settings.dart';
 
 class EditUserScreen extends StatefulWidget {
   final MarzbanApi api;
@@ -15,6 +16,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
   late final gb = TextEditingController(
       text: u.dataLimit == 0 ? '' : (u.dataLimit / 1073741824).toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), ''));
   late final note = TextEditingController(text: u.note);
+  late final contact = TextEditingController(text: AppSettings.contacts[AppSettings.contactKey(widget.api.server.id, widget.user.username)] ?? '');
   late DateTime? expire = u.expireDate;
   late bool enabled = u.status != 'disabled';
   late String strategy = (u.raw['data_limit_reset_strategy'] ?? 'no_reset').toString();
@@ -67,6 +69,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     setState(() { busy = true; err = null; });
     try {
       await widget.api.updateUser(u.username, patch);
+      await AppSettings.setContact(widget.api.server.id, u.username, contact.text);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       setState(() { busy = false; err = MarzbanApi.errorText(e); });
@@ -99,6 +102,8 @@ class _EditUserScreenState extends State<EditUserScreen> {
           ),
           const SizedBox(height: 12),
           TextField(controller: note, decoration: const InputDecoration(labelText: 'Note', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: contact, decoration: const InputDecoration(labelText: 'Contact (ဖုန်း / @telegram)', helperText: 'ဒီဖုန်းထဲမှာပဲ သိမ်းမယ် (panel ကို မပို့ပါ)', border: OutlineInputBorder())),
           const SizedBox(height: 16),
           Text('Inbounds', style: Theme.of(context).textTheme.titleMedium),
           if (!inboundsLoaded) const Padding(padding: EdgeInsets.all(12), child: Text('Loading... (မ load ရင် inbound ကို မပြောင်းဘဲ ကျန်တာပဲ သိမ်းမယ်)', style: TextStyle(fontSize: 12))),

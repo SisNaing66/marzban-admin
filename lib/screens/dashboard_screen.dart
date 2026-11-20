@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
+import '../health.dart';
 import '../storage.dart';
+import '../updater.dart';
+import 'global_search_screen.dart';
 import 'server_home_screen.dart';
 
 class _Stat {
@@ -25,9 +28,14 @@ class DashboardScreen extends StatefulWidget {
 class DashboardScreenState extends State<DashboardScreen> {
   List<_Stat> stats = [];
   bool loading = true;
+  bool update = false;
 
   @override
-  void initState() { super.initState(); refresh(); }
+  void initState() {
+    super.initState();
+    refresh();
+    updateAvailable().then((v) { if (mounted && v) setState(() => update = true); }).catchError((_) {});
+  }
 
   Future<_Stat> _one(ServerConfig s) async {
     final api = MarzbanApi(s);
@@ -43,6 +51,9 @@ class DashboardScreenState extends State<DashboardScreen> {
     if (mounted) setState(() => loading = true);
     final servers = await Storage.load();
     final res = await Future.wait(servers.map(_one)); // all servers in parallel
+    for (final st in res) {
+      try { await HealthStore.add(st.server.id, HealthSample.fromSystem(st.sys)); } catch (_) {}
+    }
     if (mounted) setState(() { stats = res; loading = false; });
   }
 
@@ -59,7 +70,10 @@ class DashboardScreenState extends State<DashboardScreen> {
     final active = sum((s) => (s.sys?['users_active'] ?? 0) as int);
     final online = sum((s) => (s.sys?['online_users'] ?? 0) as int);
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard'), actions: [IconButton(onPressed: refresh, icon: const Icon(Icons.refresh))]),
+      appBar: AppBar(title: const Text('Dashboard'), actions: [
+        IconButton(tooltip: 'Search all servers', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlobalSearchScreen())), icon: const Icon(Icons.manage_search)),
+        IconButton(onPressed: refresh, icon: const Icon(Icons.refresh)),
+      ]),
       body: loading && stats.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -67,6 +81,15 @@ class DashboardScreenState extends State<DashboardScreen> {
               child: stats.isEmpty
                   ? ListView(children: const [SizedBox(height: 160), Center(child: Text('Servers tab မှာ server အရင်ထည့်ပါ'))])
                   : ListView(padding: const EdgeInsets.all(12), children: [
+                      if (update) Card(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        child: ListTile(
+                          leading: const Icon(Icons.system_update),
+                          title: const Text('App အသစ် ရပါပြီ'),
+                          subtitle: const Text('ဒေါင်းပြီး ထပ်တင်ရင် အဟောင်းပေါ် update ဖြစ်မယ်'),
+                          trailing: FilledButton(onPressed: () => openDownload(), child: const Text('Download')),
+                        ),
+                      ),
                       Card(child: Padding(padding: const EdgeInsets.all(14), child: Wrap(spacing: 24, runSpacing: 12, children: [
                         _big('Servers', '${okList.length}/${stats.length}', okList.length == stats.length ? Colors.green : Colors.orange),
                         _big('Users', '$total', null),

@@ -5,14 +5,18 @@ import '../api.dart';
 import '../bulk.dart';
 import '../models.dart';
 import '../sales.dart';
+import '../settings.dart';
 import '../share_util.dart';
 import '../storage.dart';
 import 'create_user_screen.dart';
 import 'edit_user_screen.dart';
+import 'remind_screen.dart';
+import 'sync_actions.dart';
 
 class UserListScreen extends StatefulWidget {
   final MarzbanApi api;
-  const UserListScreen({super.key, required this.api});
+  final String? initialSearch;
+  const UserListScreen({super.key, required this.api, this.initialSearch});
   @override
   State<UserListScreen> createState() => _UserListScreenState();
 }
@@ -30,7 +34,7 @@ class _UserListScreenState extends State<UserListScreen> {
   bool get selecting => selected.isNotEmpty;
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() { super.initState(); search.text = widget.initialSearch ?? ''; _load(); }
 
   Future<void> _load() async {
     setState(() { loading = true; err = null; });
@@ -104,6 +108,9 @@ class _UserListScreenState extends State<UserListScreen> {
     final gb = TextEditingController(text: '0');
     final price = TextEditingController();
     var reset = list.any((u) => u.status == 'limited' || u.nearLimit);
+    var paid = true, allServers = false;
+    final others = (await Storage.load()).where((x) => x.id != widget.api.server.id).toList();
+    if (!mounted) return;
     final ok = await showDialog<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, set) => AlertDialog(
       title: Text(list.length == 1 ? 'Renew ${list.first.username}' : 'Renew ${list.length} users'),
       content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -113,8 +120,12 @@ class _UserListScreenState extends State<UserListScreen> {
             decoration: const InputDecoration(labelText: 'GB ထပ်တိုး', helperText: 'Unlimited user ဆိုရင် မပြောင်းပါ')),
         TextField(controller: price, keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: 'Price per user (optional)', helperText: 'ထည့်ရင် ရောင်းချမှတ်တမ်းထဲ မှတ်မယ်')),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: paid, title: const Text('ပေးပြီး (Paid)'), onChanged: (v) => set(() => paid = v)),
         CheckboxListTile(contentPadding: EdgeInsets.zero, value: reset, title: const Text('Usage ကို 0 ပြန်ထား'),
             onChanged: (v) => set(() => reset = v ?? false)),
+        if (others.isNotEmpty) CheckboxListTile(contentPadding: EdgeInsets.zero, value: allServers,
+            title: const Text('တခြား server တွေမှာပါ Renew'), subtitle: const Text('username တူတဲ့ user ကို'),
+            onChanged: (v) => set(() => allServers = v ?? false)),
       ])),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
@@ -126,16 +137,30 @@ class _UserListScreenState extends State<UserListScreen> {
     final g = double.tryParse(gb.text.trim()) ?? 0;
     final p = double.tryParse(price.text.trim()) ?? 0;
     final okUsers = <VpnUser>[];
+    final otherApis = {for (final o in (allServers ? others : <ServerConfig>[])) o.id: MarzbanApi(o)};
+    final otherErr = <String>[];
     final r = await runBulk<VpnUser>(context, 'Renewing', list, (u) => u.username, (u) async {
       if (reset) await widget.api.resetUsage(u.username);
       await widget.api.renew(u, days: d, gb: g);
       okUsers.add(u);
+      for (final o in others.where((x) => otherApis.containsKey(x.id))) {
+        try {
+          final api2 = otherApis[o.id]!;
+          for (final f in (await api2.users(search: u.username)).where((x) => x.username == u.username)) {
+            if (reset) await api2.resetUsage(f.username);
+            await api2.renew(f, days: d, gb: g);
+          }
+        } catch (e) {
+          otherErr.add('${u.username} @ ${o.name}: ${e is String ? e : MarzbanApi.errorText(e)}');
+        }
+      }
     });
+    r.errors.addAll(otherErr);
     if (p > 0 && okUsers.isNotEmpty) {
       await SalesStore.add([
         for (final u in okUsers)
           Sale(ts: DateTime.now().millisecondsSinceEpoch ~/ 1000, server: widget.api.server.name,
-              user: u.username, kind: 'renew', days: d, gb: g, amount: p)
+              user: u.username, kind: 'renew', days: d, gb: g, amount: p, paid: paid)
       ]);
     }
     await _finishBulk('Renew result', r);
@@ -148,6 +173,14 @@ class _UserListScreenState extends State<UserListScreen> {
       builder: (c) => SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, children: [
         Text(u.username, style: Theme.of(context).textTheme.titleLarge),
         if (u.note.isNotEmpty) Text(u.note, style: const TextStyle(fontSize: 12)),
+        if (AppSettings.contacts[AppSettings.contactKey(widget.api.server.id, u.username)] != null)
+          InkWell(
+            onTap: () { Clipboard.setData(ClipboardData(text: AppSettings.contacts[AppSettings.contactKey(widget.api.server.id, u.username)]!)); _toast('Contact copied'); },
+            child: Padding(padding: const EdgeInsets.only(top: 2), child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.contact_phone, size: 14), const SizedBox(width: 4),
+              Text(AppSettings.contacts[AppSettings.contactKey(widget.api.server.id, u.username)]!, style: const TextStyle(fontSize: 12)),
+            ])),
+          ),
         const SizedBox(height: 12),
         if (link.isNotEmpty) Container(
           color: Colors.white, padding: const EdgeInsets.all(8),
@@ -166,6 +199,9 @@ class _UserListScreenState extends State<UserListScreen> {
           FilledButton.tonalIcon(
               icon: const Icon(Icons.autorenew), label: const Text('Renew'),
               onPressed: () { Navigator.pop(c); _renewMany([u]); }),
+          if (link.isNotEmpty) FilledButton.tonalIcon(
+              icon: const Icon(Icons.notifications_active), label: const Text('Remind'),
+              onPressed: () => shareReminder(u, link)),
           FilledButton.tonalIcon(
               icon: const Icon(Icons.edit), label: const Text('Edit'),
               onPressed: () async {
@@ -277,9 +313,14 @@ class _UserListScreenState extends State<UserListScreen> {
           ])),
           if (special != 0 && shown.isNotEmpty && !selecting)
             Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 4), child: Align(alignment: Alignment.centerLeft,
-              child: FilledButton.tonalIcon(
-                icon: const Icon(Icons.autorenew), label: Text('Renew all ${shown.length}'),
-                onPressed: () => _renewMany(shown)))),
+              child: Wrap(spacing: 8, children: [
+                FilledButton.tonalIcon(
+                  icon: const Icon(Icons.autorenew), label: Text('Renew all ${shown.length}'),
+                  onPressed: () => _renewMany(shown)),
+                if (special == 1) FilledButton.tonalIcon(
+                  icon: const Icon(Icons.notifications_active), label: Text('Remind ${shown.length}'),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindScreen(api: widget.api, users: shown)))),
+              ]))),
           Expanded(child: loading
               ? const Center(child: CircularProgressIndicator())
               : err != null

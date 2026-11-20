@@ -8,6 +8,36 @@ class _Result {
   final errors = <String>[];
 }
 
+/// Creates one user on [target] from [u] (a user JSON read from another server). Keeps username,
+/// proxy ids/passwords (so client links keep working), expiry, limit, reset strategy, note, disabled state.
+Future<void> createLike(MarzbanApi target, Map<String, dynamic> u, Map<String, List<String>> tags) async {
+  final name = (u['username'] ?? '').toString();
+  final srcProxies = Map<String, dynamic>.from(u['proxies'] ?? {});
+  final srcInbounds = Map<String, dynamic>.from(u['inbounds'] ?? {});
+  final proxies = <String, dynamic>{};
+  final inbounds = <String, List<String>>{};
+  srcProxies.forEach((proto, settings) {
+    final tgt = tags[proto];
+    if (tgt == null || tgt.isEmpty) return; // protocol not available on target
+    final wanted = List<String>.from(srcInbounds[proto] ?? const []);
+    final use = wanted.isEmpty ? tgt : tgt.where(wanted.contains).toList();
+    inbounds[proto] = use.isEmpty ? tgt : use;
+    proxies[proto] = settings ?? {};
+  });
+  if (proxies.isEmpty) throw 'no matching protocol on target';
+  await target.createUserBody({
+    'username': name,
+    'proxies': proxies,
+    'inbounds': inbounds,
+    'expire': u['expire'] ?? 0,
+    'data_limit': u['data_limit'] ?? 0,
+    'data_limit_reset_strategy': u['data_limit_reset_strategy'] ?? 'no_reset',
+    'status': 'active',
+    'note': u['note'] ?? '',
+  });
+  if (u['status'] == 'disabled') await target.updateUser(name, {'status': 'disabled'});
+}
+
 /// Creates every user in [rawUsers] that does not already exist on [target].
 /// Keeps username, proxy ids/passwords (so existing client links keep working),
 /// expiry, data limit, reset strategy, note and disabled state.
@@ -23,30 +53,7 @@ Future<_Result> _copyUsers(MarzbanApi target, List<Map<String, dynamic>> rawUser
     progress.value = '$i / ${rawUsers.length}  $name';
     if (existing.contains(name.toLowerCase())) { res.skipped++; continue; }
     try {
-      final srcProxies = Map<String, dynamic>.from(u['proxies'] ?? {});
-      final srcInbounds = Map<String, dynamic>.from(u['inbounds'] ?? {});
-      final proxies = <String, dynamic>{};
-      final inbounds = <String, List<String>>{};
-      srcProxies.forEach((proto, settings) {
-        final tgt = tags[proto];
-        if (tgt == null || tgt.isEmpty) return; // protocol not available on target
-        final wanted = List<String>.from(srcInbounds[proto] ?? const []);
-        final use = wanted.isEmpty ? tgt : tgt.where(wanted.contains).toList();
-        inbounds[proto] = use.isEmpty ? tgt : use;
-        proxies[proto] = settings ?? {};
-      });
-      if (proxies.isEmpty) throw 'no matching protocol on target';
-      await target.createUserBody({
-        'username': name,
-        'proxies': proxies,
-        'inbounds': inbounds,
-        'expire': u['expire'] ?? 0,
-        'data_limit': u['data_limit'] ?? 0,
-        'data_limit_reset_strategy': u['data_limit_reset_strategy'] ?? 'no_reset',
-        'status': 'active',
-        'note': u['note'] ?? '',
-      });
-      if (u['status'] == 'disabled') await target.updateUser(name, {'status': 'disabled'});
+      await createLike(target, u, tags);
       res.created++;
     } catch (e) {
       res.failed++;

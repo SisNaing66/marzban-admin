@@ -33,7 +33,7 @@ jobs:
       - name: Patch Android project
         run: python3 ci/patch_android.py
       - run: flutter pub get
-      - run: flutter build apk --release --split-per-abi
+      - run: flutter build apk --release --split-per-abi --dart-define=BUILD_TS=$(date +%s)
       - uses: actions/upload-artifact@v4
         with:
           name: marzban-admin-apk

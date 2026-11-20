@@ -4,6 +4,7 @@ import '../backup_io.dart';
 import '../biometric.dart';
 import '../settings.dart';
 import 'sales_screen.dart';
+import 'telegram_card.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -13,6 +14,7 @@ class MoreScreen extends StatefulWidget {
 
 class _MoreScreenState extends State<MoreScreen> {
   late final tpl = TextEditingController(text: AppSettings.template);
+  late final remind = TextEditingController(text: AppSettings.remindTemplate);
 
   void _toast(String m) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 
@@ -86,6 +88,8 @@ class _MoreScreenState extends State<MoreScreen> {
             ),
           ),
           const Divider(height: 32),
+          const TelegramCard(),
+          const Divider(height: 32),
           ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.receipt_long), title: const Text('Sales'),
               subtitle: const Text('Create/Renew ရောင်းချမှတ်တမ်းနဲ့ လစဉ်ဝင်ငွေ'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SalesScreen()))),
@@ -132,6 +136,18 @@ class _MoreScreenState extends State<MoreScreen> {
             OutlinedButton(onPressed: () { tpl.text = defaultTemplate; }, child: const Text('Default')),
             const SizedBox(width: 8),
             Expanded(child: FilledButton(onPressed: () async { await AppSettings.setTemplate(tpl.text); _toast('Saved'); }, child: const Text('Save template'))),
+          ]),
+          const Divider(height: 32),
+          Text('Reminder template (သက်တမ်းကုန်ခါနီး သတိပေးစာ)', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          const Text('ထည့်လို့ရတဲ့ စာလုံးတွေ: {name} {username} {link} {gb} {expire} {days}', style: TextStyle(fontSize: 12)),
+          const SizedBox(height: 8),
+          TextField(controller: remind, maxLines: 6, decoration: const InputDecoration(border: OutlineInputBorder())),
+          const SizedBox(height: 8),
+          Row(children: [
+            OutlinedButton(onPressed: () { remind.text = defaultRemind; }, child: const Text('Default')),
+            const SizedBox(width: 8),
+            Expanded(child: FilledButton(onPressed: () async { await AppSettings.setRemindTemplate(remind.text); _toast('Saved'); }, child: const Text('Save reminder'))),
           ]),
         ]),
       );

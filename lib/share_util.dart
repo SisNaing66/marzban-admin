@@ -9,10 +9,10 @@ import 'package:share_plus/share_plus.dart';
 import 'models.dart';
 import 'settings.dart';
 
-String buildMessage(VpnUser u, String link) {
+String buildMessage(VpnUser u, String link, {String? template}) {
   final exp = u.expireDate;
   final left = u.daysLeft;
-  return AppSettings.template
+  return (template ?? AppSettings.template)
       .replaceAll('{name}', u.note.isNotEmpty ? u.note : u.username)
       .replaceAll('{username}', u.username)
       .replaceAll('{link}', link)
@@ -22,6 +22,10 @@ String buildMessage(VpnUser u, String link) {
 }
 
 Future<void> shareMessage(VpnUser u, String link) => Share.share(buildMessage(u, link));
+
+/// Renewal reminder for a customer (uses the reminder template).
+Future<void> shareReminder(VpnUser u, String link) =>
+    Share.share(buildMessage(u, link, template: AppSettings.remindTemplate));
 
 /// White-background QR PNG (720x720).
 Future<Uint8List> qrPng(String link) async {
