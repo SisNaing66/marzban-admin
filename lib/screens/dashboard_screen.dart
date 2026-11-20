@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
@@ -40,7 +41,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   Future<_Stat> _one(ServerConfig s) async {
     final api = MarzbanApi(s);
     try {
-      final r = await Future.wait<dynamic>([api.system(), api.users()]).timeout(const Duration(seconds: 25));
+      final r = await Future.wait<dynamic>([api.system(), api.users()]).timeout(Duration(seconds: 25));
       return _Stat(s, sys: r[0] as Map<String, dynamic>, users: r[1] as List<VpnUser>);
     } catch (e) {
       return _Stat(s, error: MarzbanApi.errorText(e));
@@ -58,8 +59,8 @@ class DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _chip(IconData i, String t, {Color? c}) => Padding(
-        padding: const EdgeInsets.only(right: 12, top: 4),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(i, size: 14, color: c), const SizedBox(width: 3), Text(t, style: TextStyle(fontSize: 12, color: c))]),
+        padding: EdgeInsets.only(right: 12, top: 4),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(i, size: 14, color: c), SizedBox(width: 3), Text(t, style: TextStyle(fontSize: 12, color: c))]),
       );
 
   @override
@@ -70,27 +71,27 @@ class DashboardScreenState extends State<DashboardScreen> {
     final active = sum((s) => (s.sys?['users_active'] ?? 0) as int);
     final online = sum((s) => (s.sys?['online_users'] ?? 0) as int);
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard'), actions: [
-        IconButton(tooltip: 'Search all servers', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlobalSearchScreen())), icon: const Icon(Icons.manage_search)),
-        IconButton(onPressed: refresh, icon: const Icon(Icons.refresh)),
+      appBar: AppBar(title: Text(t('Dashboard')), actions: [
+        IconButton(tooltip: t('Search all servers'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GlobalSearchScreen())), icon: Icon(Icons.manage_search)),
+        IconButton(onPressed: refresh, icon: Icon(Icons.refresh)),
       ]),
       body: loading && stats.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: refresh,
               child: stats.isEmpty
-                  ? ListView(children: const [SizedBox(height: 160), Center(child: Text('Servers tab မှာ server အရင်ထည့်ပါ'))])
-                  : ListView(padding: const EdgeInsets.all(12), children: [
+                  ? ListView(children: [SizedBox(height: 160), Center(child: Text('Servers tab မှာ server အရင်ထည့်ပါ'))])
+                  : ListView(padding: EdgeInsets.all(12), children: [
                       if (update) Card(
                         color: Theme.of(context).colorScheme.primaryContainer,
                         child: ListTile(
-                          leading: const Icon(Icons.system_update),
-                          title: const Text('App အသစ် ရပါပြီ'),
-                          subtitle: const Text('ဒေါင်းပြီး ထပ်တင်ရင် အဟောင်းပေါ် update ဖြစ်မယ်'),
-                          trailing: FilledButton(onPressed: () => openDownload(), child: const Text('Download')),
+                          leading: Icon(Icons.system_update),
+                          title: Text('App အသစ် ရပါပြီ'),
+                          subtitle: Text('ဒေါင်းပြီး ထပ်တင်ရင် အဟောင်းပေါ် update ဖြစ်မယ်'),
+                          trailing: FilledButton(onPressed: () => openDownload(), child: Text(t('Download'))),
                         ),
                       ),
-                      Card(child: Padding(padding: const EdgeInsets.all(14), child: Wrap(spacing: 24, runSpacing: 12, children: [
+                      Card(child: Padding(padding: EdgeInsets.all(14), child: Wrap(spacing: 24, runSpacing: 12, children: [
                         _big('Servers', '${okList.length}/${stats.length}', okList.length == stats.length ? Colors.green : Colors.orange),
                         _big('Users', '$total', null),
                         _big('Active', '$active', Colors.green),
@@ -99,7 +100,7 @@ class DashboardScreenState extends State<DashboardScreen> {
                         _big('Usage ≥90%', '${sum((s) => s.near)}', Colors.deepOrange),
                         _big('Expired', '${sum((s) => s.expired)}', Colors.red),
                       ]))),
-                      if (loading) const LinearProgressIndicator(),
+                      if (loading) LinearProgressIndicator(),
                       for (final s in stats) _serverCard(s),
                     ]),
             ),
@@ -110,7 +111,7 @@ class DashboardScreenState extends State<DashboardScreen> {
         width: 92,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(v, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: c)),
-          Text(k, style: const TextStyle(fontSize: 12)),
+          Text(t(k), style: TextStyle(fontSize: 12)),
         ]),
       );
 
@@ -120,15 +121,15 @@ class DashboardScreenState extends State<DashboardScreen> {
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ServerHomeScreen(server: s.server))),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Icon(Icons.circle, size: 12, color: s.ok ? Colors.green : Colors.red),
-              const SizedBox(width: 8),
-              Expanded(child: Text(s.server.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16))),
+              SizedBox(width: 8),
+              Expanded(child: Text(s.server.name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16))),
               Text(s.ok ? 'Online' : 'Offline', style: TextStyle(color: s.ok ? Colors.green : Colors.red, fontSize: 12)),
             ]),
-            if (!s.ok) Padding(padding: const EdgeInsets.only(top: 6), child: Text(s.error!, style: const TextStyle(color: Colors.red, fontSize: 12))),
+            if (!s.ok) Padding(padding: EdgeInsets.only(top: 6), child: Text(s.error!, style: TextStyle(color: Colors.red, fontSize: 12))),
             if (s.ok) Wrap(children: [
               _chip(Icons.people, '${sys['total_user']} users'),
               _chip(Icons.check_circle, '${sys['users_active']} active', c: Colors.green),

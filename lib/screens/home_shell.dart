@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'more_screen.dart';
@@ -19,7 +20,7 @@ class _HomeShellState extends State<HomeShell> {
         body: IndexedStack(index: tab, children: [
           DashboardScreen(key: dashKey),
           ServerListScreen(key: serversKey),
-          const MoreScreen(),
+          MoreScreen(),
         ]),
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab,
@@ -28,10 +29,10 @@ class _HomeShellState extends State<HomeShell> {
             if (i == 1 && tab != 1) serversKey.currentState?.reload();
             setState(() => tab = i);
           },
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.dashboard), label: 'Home'),
-            NavigationDestination(icon: Icon(Icons.dns), label: 'Servers'),
-            NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
+          destinations: [
+            NavigationDestination(icon: Icon(Icons.dashboard), label: t('Home')),
+            NavigationDestination(icon: Icon(Icons.dns), label: t('Servers')),
+            NavigationDestination(icon: Icon(Icons.more_horiz), label: t('More')),
           ],
         ),
       );

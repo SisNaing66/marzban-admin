@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import '../biometric.dart';
 import '../settings.dart';
@@ -35,7 +36,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
 
 class _LockScreen extends StatefulWidget {
   final VoidCallback onUnlock;
-  const _LockScreen({required this.onUnlock});
+  _LockScreen({required this.onUnlock});
   @override
   State<_LockScreen> createState() => _LockScreenState();
 }
@@ -61,18 +62,18 @@ class _LockScreenState extends State<_LockScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(child: Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.lock, size: 56),
-          const SizedBox(height: 16),
-          const Text('PIN ရိုက်ထည့်ပါ', style: TextStyle(fontSize: 18)),
-          const SizedBox(height: 16),
+        body: SafeArea(child: Center(child: Padding(padding: EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.lock, size: 56),
+          SizedBox(height: 16),
+          Text('PIN ရိုက်ထည့်ပါ', style: TextStyle(fontSize: 18)),
+          SizedBox(height: 16),
           TextField(
             controller: c, autofocus: true, obscureText: true, keyboardType: TextInputType.number, maxLength: 8,
             textAlign: TextAlign.center, onSubmitted: (_) => _try(),
-            decoration: InputDecoration(errorText: err, border: const OutlineInputBorder(), counterText: '')),
-          const SizedBox(height: 12),
-          SizedBox(width: double.infinity, child: FilledButton(onPressed: _try, child: const Text('Unlock'))),
-          if (AppSettings.biometric) TextButton.icon(onPressed: _bio, icon: const Icon(Icons.fingerprint), label: const Text('လက်ဗွေနဲ့ ဖွင့်')),
+            decoration: InputDecoration(errorText: err, border: OutlineInputBorder(), counterText: '')),
+          SizedBox(height: 12),
+          SizedBox(width: double.infinity, child: FilledButton(onPressed: _try, child: Text(t('Unlock')))),
+          if (AppSettings.biometric) TextButton.icon(onPressed: _bio, icon: Icon(Icons.fingerprint), label: Text('လက်ဗွေနဲ့ ဖွင့်')),
         ])))),
       );
 }

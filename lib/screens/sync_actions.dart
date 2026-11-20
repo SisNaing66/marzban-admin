@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
@@ -19,7 +20,7 @@ Future<void> createLike(MarzbanApi target, Map<String, dynamic> u, Map<String, L
   srcProxies.forEach((proto, settings) {
     final tgt = tags[proto];
     if (tgt == null || tgt.isEmpty) return; // protocol not available on target
-    final wanted = List<String>.from(srcInbounds[proto] ?? const []);
+    final wanted = List<String>.from(srcInbounds[proto] ?? []);
     final use = wanted.isEmpty ? tgt : tgt.where(wanted.contains).toList();
     inbounds[proto] = use.isEmpty ? tgt : use;
     proxies[proto] = settings ?? {};
@@ -72,7 +73,7 @@ Future<void> _runWithProgress(BuildContext context, String title, Future<_Result
       content: ValueListenableBuilder<String>(
         valueListenable: progress,
         builder: (_, v, __) => Column(mainAxisSize: MainAxisSize.min, children: [
-          const LinearProgressIndicator(), const SizedBox(height: 12), Text(v)]),
+          LinearProgressIndicator(), SizedBox(height: 12), Text(v)]),
       ),
     ),
   );
@@ -88,7 +89,7 @@ Future<void> _runWithProgress(BuildContext context, String title, Future<_Result
       content: SingleChildScrollView(child: Text(fatal ??
           'Created: ${r!.created}\nAlready existed (skipped): ${r.skipped}\nFailed: ${r.failed}'
           '${r.errors.isEmpty ? '' : '\n\n${r.errors.take(10).join('\n')}'}')),
-      actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('OK'))],
+      actions: [TextButton(onPressed: () => Navigator.pop(c), child: Text(t('OK')))],
     ),
   );
 }
@@ -98,7 +99,7 @@ Future<void> mergeUsers(BuildContext context, MarzbanApi target) async {
   final others = (await Storage.load()).where((s) => s.id != target.server.id).toList();
   if (!context.mounted) return;
   if (others.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No other servers available to merge from.')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('No other servers available to merge from.'))));
     return;
   }
   final src = await showDialog<ServerConfig>(
@@ -110,11 +111,11 @@ Future<void> mergeUsers(BuildContext context, MarzbanApi target) async {
   );
   if (src == null || !context.mounted) return;
   final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-    title: const Text('Merge Users?'),
+    title: Text(t('Merge Users?')),
     content: Text('Users from "${src.name}" that do not exist yet will be created on "${target.server.name}". Existing users are not changed.'),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-      FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Merge')),
+      TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('Cancel'))),
+      FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(t('Merge'))),
     ],
   ));
   if (ok != true || !context.mounted) return;
@@ -141,17 +142,17 @@ Future<void> restoreUsers(BuildContext context, MarzbanApi api) async {
   final b = await Storage.loadBackup(api.server.id);
   if (!context.mounted) return;
   if (b == null) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No backup found for this server')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('No backup found for this server'))));
     return;
   }
   final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-    title: const Text('Restore Users?'),
+    title: Text(t('Restore Users?')),
     content: Text('Restore ${b.users.length} users from the backup made on '
         '${b.time.toString().substring(0, 16)} to "${api.server.name}"?\n\n'
         '(Use this only if you reinstalled an empty Marzban server.) Existing users are skipped.'),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-      FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Restore')),
+      TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('Cancel'))),
+      FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(t('Restore'))),
     ],
   ));
   if (ok != true || !context.mounted) return;
@@ -161,11 +162,11 @@ Future<void> restoreUsers(BuildContext context, MarzbanApi api) async {
 /// Restore users from an in-memory list (e.g. an imported backup file). Existing users are skipped.
 Future<void> restoreUsersFromList(BuildContext context, MarzbanApi api, List<Map<String, dynamic>> users, String what) async {
   final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-    title: const Text('Restore Users?'),
+    title: Text(t('Restore Users?')),
     content: Text('Restore ${users.length} users ($what) to "${api.server.name}"? Existing users are skipped.'),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-      FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Restore')),
+      TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('Cancel'))),
+      FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(t('Restore'))),
     ],
   ));
   if (ok != true || !context.mounted) return;

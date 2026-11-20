@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -74,7 +75,7 @@ class _UserListScreenState extends State<UserListScreen> {
       await showDialog<bool>(context: context, builder: (c) => AlertDialog(
         title: Text(title), content: Text(body),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('Cancel'))),
           FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(action)),
         ],
       )) == true;
@@ -115,21 +116,21 @@ class _UserListScreenState extends State<UserListScreen> {
       title: Text(list.length == 1 ? 'Renew ${list.first.username}' : 'Renew ${list.length} users'),
       content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         TextField(controller: days, keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'ရက် ထပ်တိုး', helperText: 'No-expiry user ဆိုရင် မပြောင်းပါ')),
+            decoration: InputDecoration(labelText: 'ရက် ထပ်တိုး', helperText: 'No-expiry user ဆိုရင် မပြောင်းပါ')),
         TextField(controller: gb, keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'GB ထပ်တိုး', helperText: 'Unlimited user ဆိုရင် မပြောင်းပါ')),
+            decoration: InputDecoration(labelText: 'GB ထပ်တိုး', helperText: 'Unlimited user ဆိုရင် မပြောင်းပါ')),
         TextField(controller: price, keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Price per user (optional)', helperText: 'ထည့်ရင် ရောင်းချမှတ်တမ်းထဲ မှတ်မယ်')),
-        SwitchListTile(contentPadding: EdgeInsets.zero, value: paid, title: const Text('ပေးပြီး (Paid)'), onChanged: (v) => set(() => paid = v)),
-        CheckboxListTile(contentPadding: EdgeInsets.zero, value: reset, title: const Text('Usage ကို 0 ပြန်ထား'),
+            decoration: InputDecoration(labelText: t('Price per user (optional)'), helperText: 'ထည့်ရင် ရောင်းချမှတ်တမ်းထဲ မှတ်မယ်')),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: paid, title: Text('ပေးပြီး (Paid)'), onChanged: (v) => set(() => paid = v)),
+        CheckboxListTile(contentPadding: EdgeInsets.zero, value: reset, title: Text('Usage ကို 0 ပြန်ထား'),
             onChanged: (v) => set(() => reset = v ?? false)),
         if (others.isNotEmpty) CheckboxListTile(contentPadding: EdgeInsets.zero, value: allServers,
-            title: const Text('တခြား server တွေမှာပါ Renew'), subtitle: const Text('username တူတဲ့ user ကို'),
+            title: Text('တခြား server တွေမှာပါ Renew'), subtitle: Text('username တူတဲ့ user ကို'),
             onChanged: (v) => set(() => allServers = v ?? false)),
       ])),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Renew')),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('Cancel'))),
+        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t('Renew'))),
       ],
     )));
     if (ok != true || !mounted) return;
@@ -170,61 +171,61 @@ class _UserListScreenState extends State<UserListScreen> {
     final link = _fullLink(u);
     showModalBottomSheet(
       context: context, isScrollControlled: true,
-      builder: (c) => SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      builder: (c) => SafeArea(child: SingleChildScrollView(padding: EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, children: [
         Text(u.username, style: Theme.of(context).textTheme.titleLarge),
-        if (u.note.isNotEmpty) Text(u.note, style: const TextStyle(fontSize: 12)),
+        if (u.note.isNotEmpty) Text(u.note, style: TextStyle(fontSize: 12)),
         if (AppSettings.contacts[AppSettings.contactKey(widget.api.server.id, u.username)] != null)
           InkWell(
             onTap: () { Clipboard.setData(ClipboardData(text: AppSettings.contacts[AppSettings.contactKey(widget.api.server.id, u.username)]!)); _toast('Contact copied'); },
-            child: Padding(padding: const EdgeInsets.only(top: 2), child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.contact_phone, size: 14), const SizedBox(width: 4),
-              Text(AppSettings.contacts[AppSettings.contactKey(widget.api.server.id, u.username)]!, style: const TextStyle(fontSize: 12)),
+            child: Padding(padding: EdgeInsets.only(top: 2), child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.contact_phone, size: 14), SizedBox(width: 4),
+              Text(AppSettings.contacts[AppSettings.contactKey(widget.api.server.id, u.username)]!, style: TextStyle(fontSize: 12)),
             ])),
           ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         if (link.isNotEmpty) Container(
-          color: Colors.white, padding: const EdgeInsets.all(8),
+          color: Colors.white, padding: EdgeInsets.all(8),
           child: QrImageView(data: link, size: 220)),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Wrap(spacing: 8, children: [
           if (link.isNotEmpty) FilledButton.icon(
-              icon: const Icon(Icons.share), label: const Text('Share'),
+              icon: Icon(Icons.share), label: Text(t('Share')),
               onPressed: () => shareMessage(u, link)),
           if (link.isNotEmpty) FilledButton.tonalIcon(
-              icon: const Icon(Icons.qr_code), label: const Text('QR image'),
+              icon: Icon(Icons.qr_code), label: Text(t('QR image')),
               onPressed: () async { try { await shareQrImage(u, link); } catch (e) { _toast('$e'); } }),
           if (link.isNotEmpty) FilledButton.tonalIcon(
-              icon: const Icon(Icons.download), label: const Text('Save QR'),
+              icon: Icon(Icons.download), label: Text(t('Save QR')),
               onPressed: () async { try { await saveQrToGallery(u, link); _toast('Saved to gallery'); } catch (e) { _toast('$e'); } }),
           FilledButton.tonalIcon(
-              icon: const Icon(Icons.autorenew), label: const Text('Renew'),
+              icon: Icon(Icons.autorenew), label: Text(t('Renew')),
               onPressed: () { Navigator.pop(c); _renewMany([u]); }),
           if (link.isNotEmpty) FilledButton.tonalIcon(
-              icon: const Icon(Icons.notifications_active), label: const Text('Remind'),
+              icon: Icon(Icons.notifications_active), label: Text(t('Remind')),
               onPressed: () => shareReminder(u, link)),
           FilledButton.tonalIcon(
-              icon: const Icon(Icons.edit), label: const Text('Edit'),
+              icon: Icon(Icons.edit), label: Text(t('Edit')),
               onPressed: () async {
                 Navigator.pop(c);
                 final ok = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => EditUserScreen(api: widget.api, user: u)));
                 if (ok == true) _load();
               }),
         ]),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Wrap(spacing: 8, children: [
           if (link.isNotEmpty) OutlinedButton.icon(
-              icon: const Icon(Icons.copy), label: const Text('Subscription'),
+              icon: Icon(Icons.copy), label: Text('Subscription'),
               onPressed: () { Clipboard.setData(ClipboardData(text: link)); _toast('Link Copied'); }),
           for (var i = 0; i < u.links.length; i++) OutlinedButton.icon(
-              icon: const Icon(Icons.link), label: Text('Config ${i + 1}'),
+              icon: Icon(Icons.link), label: Text('Config ${i + 1}'),
               onPressed: () { Clipboard.setData(ClipboardData(text: u.links[i])); _toast('Link Copied'); }),
         ]),
-        const Divider(height: 24),
+        Divider(height: 24),
         Wrap(spacing: 8, children: [
-          TextButton(onPressed: () async { Navigator.pop(c); await widget.api.resetUsage(u.username); _load(); }, child: const Text('Reset usage')),
-          TextButton(onPressed: () async { Navigator.pop(c); await widget.api.revokeSub(u.username); _load(); }, child: const Text('Revoke link')),
+          TextButton(onPressed: () async { Navigator.pop(c); await widget.api.resetUsage(u.username); _load(); }, child: Text(t('Reset usage'))),
+          TextButton(onPressed: () async { Navigator.pop(c); await widget.api.revokeSub(u.username); _load(); }, child: Text(t('Revoke link'))),
           TextButton(onPressed: () { Navigator.pop(c); _setEnabled([u], u.status == 'disabled'); }, child: Text(u.status == 'disabled' ? 'Enable' : 'Disable')),
-          TextButton(onPressed: () { Navigator.pop(c); _deleteMany([u]); }, child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () { Navigator.pop(c); _deleteMany([u]); }, child: Text(t('Delete'), style: TextStyle(color: Colors.red))),
         ]),
       ]))),
     );
@@ -250,14 +251,14 @@ class _UserListScreenState extends State<UserListScreen> {
     return Material(
       color: Theme.of(context).colorScheme.secondaryContainer,
       child: Row(children: [
-        IconButton(icon: const Icon(Icons.close), onPressed: () => setState(selected.clear)),
+        IconButton(icon: Icon(Icons.close), onPressed: () => setState(selected.clear)),
         Expanded(child: Text('${sel.length} selected')),
-        IconButton(tooltip: 'Select all', icon: const Icon(Icons.select_all),
+        IconButton(tooltip: t('Select all'), icon: Icon(Icons.select_all),
             onPressed: () => setState(() => selected.addAll(shown.map((u) => u.username)))),
-        IconButton(tooltip: 'Renew', icon: const Icon(Icons.autorenew), onPressed: () => _renewMany(sel)),
-        IconButton(tooltip: 'Enable', icon: const Icon(Icons.play_circle_outline), onPressed: () => _setEnabled(sel, true)),
-        IconButton(tooltip: 'Disable', icon: const Icon(Icons.pause_circle_outline), onPressed: () => _setEnabled(sel, false)),
-        IconButton(tooltip: 'Delete', icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => _deleteMany(sel)),
+        IconButton(tooltip: t('Renew'), icon: Icon(Icons.autorenew), onPressed: () => _renewMany(sel)),
+        IconButton(tooltip: t('Enable'), icon: Icon(Icons.play_circle_outline), onPressed: () => _setEnabled(sel, true)),
+        IconButton(tooltip: t('Disable'), icon: Icon(Icons.pause_circle_outline), onPressed: () => _setEnabled(sel, false)),
+        IconButton(tooltip: t('Delete'), icon: Icon(Icons.delete_outline, color: Colors.red), onPressed: () => _deleteMany(sel)),
       ]),
     );
   }
@@ -272,63 +273,63 @@ class _UserListScreenState extends State<UserListScreen> {
       onPopInvokedWithResult: (didPop, _) { if (!didPop) setState(selected.clear); },
       child: Scaffold(
         floatingActionButton: selecting ? null : FloatingActionButton.extended(
-          icon: const Icon(Icons.person_add), label: const Text('Create VPN User'),
+          icon: Icon(Icons.person_add), label: Text(t('Create VPN User')),
           onPressed: () async {
             final ok = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => CreateUserScreen(api: widget.api)));
             if (ok == true) _load();
           }),
         body: Column(children: [
           if (selecting) _selectBar(shown),
-          Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 0), child: Row(children: [
+          Padding(padding: EdgeInsets.fromLTRB(12, 8, 12, 0), child: Row(children: [
             Expanded(child: TextField(
               controller: search, onSubmitted: (_) => _load(),
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search users', isDense: true, border: OutlineInputBorder()))),
-            const SizedBox(width: 4),
+              decoration: InputDecoration(prefixIcon: Icon(Icons.search), hintText: t('Search users'), isDense: true, border: OutlineInputBorder()))),
+            SizedBox(width: 4),
             PopupMenuButton<String>(
-              tooltip: 'Sort', icon: const Icon(Icons.sort), initialValue: sort,
+              tooltip: t('Sort'), icon: Icon(Icons.sort), initialValue: sort,
               onSelected: (v) => setState(() => sort = v),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'name', child: Text('Name')),
-                PopupMenuItem(value: 'usage', child: Text('Usage (high first)')),
-                PopupMenuItem(value: 'expiry', child: Text('Expiry (soon first)')),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'name', child: Text(t('Name'))),
+                PopupMenuItem(value: 'usage', child: Text(t('Usage (high first)'))),
+                PopupMenuItem(value: 'expiry', child: Text(t('Expiry (soon first)'))),
               ]),
             DropdownButton<String?>(
-              value: status, hint: const Text('All'),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('All')),
-                DropdownMenuItem(value: 'active', child: Text('Active')),
-                DropdownMenuItem(value: 'expired', child: Text('Expired')),
-                DropdownMenuItem(value: 'limited', child: Text('Limited')),
-                DropdownMenuItem(value: 'disabled', child: Text('Disabled')),
+              value: status, hint: Text(t('All')),
+              items: [
+                DropdownMenuItem(value: null, child: Text(t('All'))),
+                DropdownMenuItem(value: 'active', child: Text(t('Active'))),
+                DropdownMenuItem(value: 'expired', child: Text(t('Expired'))),
+                DropdownMenuItem(value: 'limited', child: Text(t('Limited'))),
+                DropdownMenuItem(value: 'disabled', child: Text(t('Disabled'))),
               ],
               onChanged: (v) { status = v; _load(); }),
           ])),
-          SizedBox(height: 44, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12), children: [
+          SizedBox(height: 44, child: ListView(scrollDirection: Axis.horizontal, padding: EdgeInsets.symmetric(horizontal: 12), children: [
             for (final e in [
               (0, 'All (${users.length})'),
               (1, 'ကုန်ခါနီး ≤3 ရက် ($expiringN)'),
               (2, 'Data ≥90% ($nearN)'),
-            ]) Padding(padding: const EdgeInsets.only(right: 8, top: 6, bottom: 6), child: ChoiceChip(
+            ]) Padding(padding: EdgeInsets.only(right: 8, top: 6, bottom: 6), child: ChoiceChip(
               label: Text(e.$2), selected: special == e.$1, onSelected: (_) => setState(() => special = e.$1))),
           ])),
           if (special != 0 && shown.isNotEmpty && !selecting)
-            Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 4), child: Align(alignment: Alignment.centerLeft,
+            Padding(padding: EdgeInsets.fromLTRB(12, 0, 12, 4), child: Align(alignment: Alignment.centerLeft,
               child: Wrap(spacing: 8, children: [
                 FilledButton.tonalIcon(
-                  icon: const Icon(Icons.autorenew), label: Text('Renew all ${shown.length}'),
+                  icon: Icon(Icons.autorenew), label: Text('Renew all ${shown.length}'),
                   onPressed: () => _renewMany(shown)),
                 if (special == 1) FilledButton.tonalIcon(
-                  icon: const Icon(Icons.notifications_active), label: Text('Remind ${shown.length}'),
+                  icon: Icon(Icons.notifications_active), label: Text('Remind ${shown.length}'),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RemindScreen(api: widget.api, users: shown)))),
               ]))),
           Expanded(child: loading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator())
               : err != null
                   ? Center(child: Text(err!))
                   : RefreshIndicator(onRefresh: _load, child: shown.isEmpty
-                      ? ListView(children: const [SizedBox(height: 120), Center(child: Text('No users found'))])
+                      ? ListView(children: [SizedBox(height: 120), Center(child: Text(t('No users found')))])
                       : ListView.builder(
-                          padding: const EdgeInsets.only(bottom: 90),
+                          padding: EdgeInsets.only(bottom: 90),
                           itemCount: shown.length,
                           itemBuilder: (_, i) {
                             final u = shown[i];
@@ -339,14 +340,14 @@ class _UserListScreenState extends State<UserListScreen> {
                             return ListTile(
                               selected: sel,
                               leading: sel
-                                  ? const CircleAvatar(child: Icon(Icons.check))
+                                  ? CircleAvatar(child: Icon(Icons.check))
                                   : CircleAvatar(backgroundColor: _statusColor(u.status), child: Text(u.username.isEmpty ? '?' : u.username[0].toUpperCase())),
                               title: Text(u.username),
                               subtitle: Text('${fmtBytes(u.usedTraffic)} / $limit  •  '
                                   '${exp == null ? 'No expiry' : 'Expires: ${exp.toString().substring(0, 10)}'}'),
                               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                                if (u.expiringSoon || u.nearLimit) const Icon(Icons.warning_amber, size: 18, color: Colors.orange),
-                                const SizedBox(width: 4),
+                                if (u.expiringSoon || u.nearLimit) Icon(Icons.warning_amber, size: 18, color: Colors.orange),
+                                SizedBox(width: 4),
                                 Text(u.status.toUpperCase(), style: TextStyle(color: _statusColor(u.status), fontSize: 11)),
                               ]),
                               onTap: selecting ? toggle : () => _show(u),

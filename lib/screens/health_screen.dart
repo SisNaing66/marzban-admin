@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import '../health.dart';
 import '../models.dart';
@@ -26,13 +27,13 @@ class _HealthScreenState extends State<HealthScreen> {
   Widget build(BuildContext context) {
     final l = samples;
     return Scaffold(
-      appBar: AppBar(title: Text('Health - ${widget.server.name}'), actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))]),
+      appBar: AppBar(title: Text('Health - ${widget.server.name}'), actions: [IconButton(onPressed: _load, icon: Icon(Icons.refresh))]),
       body: l == null
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : l.isEmpty
-              ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text(
+              ? Center(child: Padding(padding: EdgeInsets.all(24), child: Text(
                   'မှတ်တမ်း မရှိသေးပါ။\nHome ကို ဖွင့်ရင် (သို့) Alerts ဖွင့်ထားရင် အလိုအလျောက် မှတ်သွားမယ်။', textAlign: TextAlign.center)))
-              : ListView(padding: const EdgeInsets.all(12), children: _body(l)),
+              : ListView(padding: EdgeInsets.all(12), children: _body(l)),
     );
   }
 
@@ -49,28 +50,28 @@ class _HealthScreenState extends State<HealthScreen> {
     }
     if (start != null) events.add('${_t(start)} → ယခု (offline ဆက်ဖြစ်နေ)');
     return [
-      Card(child: Padding(padding: const EdgeInsets.all(14), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+      Card(child: Padding(padding: EdgeInsets.all(14), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         _big('Uptime', '${up.toStringAsFixed(1)}%', up > 99 ? Colors.green : Colors.orange),
         _big('Samples', '${l.length}', null),
         _big('Offline', '${l.length - okN}', l.length - okN > 0 ? Colors.red : null),
       ]))),
-      Text('${_t(l.first.ts)}  →  ${_t(l.last.ts)}', style: const TextStyle(fontSize: 12)),
-      const SizedBox(height: 8),
+      Text('${_t(l.first.ts)}  →  ${_t(l.last.ts)}', style: TextStyle(fontSize: 12)),
+      SizedBox(height: 8),
       _chart('CPU %', [for (final s in l) s.ok ? s.cpu : null], Colors.indigo, max: 100),
       _chart('RAM %', [for (final s in l) s.ok ? s.mem : null], Colors.teal, max: 100),
       _chart('Online users', [for (final s in l) s.ok ? s.online.toDouble() : null], Colors.orange),
-      if (ok.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(
-          'Users: ${ok.last.users}  •  Online now: ${ok.last.online}', style: const TextStyle(fontSize: 12))),
-      const SizedBox(height: 12),
-      Text('Offline events', style: Theme.of(context).textTheme.titleMedium),
-      if (events.isEmpty) const Padding(padding: EdgeInsets.all(8), child: Text('မရှိပါ ✓')),
-      for (final e in events.reversed.take(20)) ListTile(dense: true, leading: const Icon(Icons.error_outline, color: Colors.red), title: Text(e)),
+      if (ok.isNotEmpty) Padding(padding: EdgeInsets.only(top: 4), child: Text(
+          'Users: ${ok.last.users}  •  Online now: ${ok.last.online}', style: TextStyle(fontSize: 12))),
+      SizedBox(height: 12),
+      Text(t('Offline events'), style: Theme.of(context).textTheme.titleMedium),
+      if (events.isEmpty) Padding(padding: EdgeInsets.all(8), child: Text('မရှိပါ ✓')),
+      for (final e in events.reversed.take(20)) ListTile(dense: true, leading: Icon(Icons.error_outline, color: Colors.red), title: Text(e)),
     ];
   }
 
   Widget _big(String k, String v, Color? c) => Column(children: [
         Text(v, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: c)),
-        Text(k, style: const TextStyle(fontSize: 12)),
+        Text(t(k), style: TextStyle(fontSize: 12)),
       ]);
 
   Widget _chart(String title, List<double?> v, Color c, {double? max}) {
@@ -78,13 +79,13 @@ class _HealthScreenState extends State<HealthScreen> {
     final hi = vals.isEmpty ? 0.0 : vals.reduce((a, b) => a > b ? a : b);
     final avg = vals.isEmpty ? 0.0 : vals.reduce((a, b) => a + b) / vals.length;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: 6),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600))),
-          Text('avg ${avg.toStringAsFixed(1)}  max ${hi.toStringAsFixed(1)}', style: const TextStyle(fontSize: 12)),
+          Expanded(child: Text(t(title), style: TextStyle(fontWeight: FontWeight.w600))),
+          Text('avg ${avg.toStringAsFixed(1)}  max ${hi.toStringAsFixed(1)}', style: TextStyle(fontSize: 12)),
         ]),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         SizedBox(height: 90, width: double.infinity, child: CustomPaint(painter: _LinePainter(v, c, max ?? (hi < 5 ? 5 : hi * 1.15), Theme.of(context).dividerColor))),
       ]),
     );

@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import '../api.dart';
 
@@ -35,20 +36,20 @@ class _HostsScreenState extends State<HostsScreen> {
     var disabled = h['is_disabled'] == true;
 
     final ok = await showDialog<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, set) => AlertDialog(
-      title: const Text('Edit Host'),
+      title: Text(t('Edit Host')),
       content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Align(alignment: Alignment.centerLeft, child: Text('Inbound: $tag', style: const TextStyle(fontSize: 12))),
-        TextField(controller: remark, decoration: const InputDecoration(labelText: 'Remark')),
-        TextField(controller: address, decoration: const InputDecoration(labelText: 'Address')),
-        TextField(controller: port, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Port (empty = inbound port)')),
-        TextField(controller: sni, decoration: const InputDecoration(labelText: 'SNI')),
-        TextField(controller: host, decoration: const InputDecoration(labelText: 'Host')),
-        TextField(controller: path, decoration: const InputDecoration(labelText: 'Path')),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Disabled'), value: disabled, onChanged: (v) => set(() => disabled = v)),
+        Align(alignment: Alignment.centerLeft, child: Text('Inbound: $tag', style: TextStyle(fontSize: 12))),
+        TextField(controller: remark, decoration: InputDecoration(labelText: 'Remark')),
+        TextField(controller: address, decoration: InputDecoration(labelText: t('Address'))),
+        TextField(controller: port, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: t('Port (empty = inbound port)'))),
+        TextField(controller: sni, decoration: InputDecoration(labelText: 'SNI')),
+        TextField(controller: host, decoration: InputDecoration(labelText: 'Host')),
+        TextField(controller: path, decoration: InputDecoration(labelText: 'Path')),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(t('Disabled')), value: disabled, onChanged: (v) => set(() => disabled = v)),
       ])),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('Cancel'))),
+        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t('Save'))),
       ],
     )));
     if (ok != true) return;
@@ -70,7 +71,7 @@ class _HostsScreenState extends State<HostsScreen> {
     try {
       await widget.api.setHosts(copy);
       data = copy;
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hosts saved')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('Hosts saved'))));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(MarzbanApi.errorText(e))));
     }
@@ -79,7 +80,7 @@ class _HostsScreenState extends State<HostsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Center(child: CircularProgressIndicator());
+    if (loading) return Center(child: CircularProgressIndicator());
     if (err != null) return Center(child: Text(err!));
     final items = <Widget>[];
     data.forEach((tag, list) {
@@ -91,7 +92,7 @@ class _HostsScreenState extends State<HostsScreen> {
           leading: Icon(Icons.public, color: off ? Colors.grey : null),
           title: Text((h['remark'] ?? '').toString(), maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text('${_addr(h['address'])}${h['port'] == null ? '' : ':${h['port']}'}  •  $tag', maxLines: 1, overflow: TextOverflow.ellipsis),
-          trailing: off ? const Text('OFF', style: TextStyle(color: Colors.grey)) : null,
+          trailing: off ? Text(t('OFF'), style: TextStyle(color: Colors.grey)) : null,
           onTap: saving ? null : () => _edit(tag, i),
         ));
       }
@@ -99,8 +100,8 @@ class _HostsScreenState extends State<HostsScreen> {
     return RefreshIndicator(
       onRefresh: _load,
       child: items.isEmpty
-          ? ListView(children: const [SizedBox(height: 120), Center(child: Text('No Host Settings Found from Server.'))])
-          : ListView(children: [if (saving) const LinearProgressIndicator(), ...items]),
+          ? ListView(children: [SizedBox(height: 120), Center(child: Text(t('No Host Settings Found from Server.')))])
+          : ListView(children: [if (saving) LinearProgressIndicator(), ...items]),
     );
   }
 }

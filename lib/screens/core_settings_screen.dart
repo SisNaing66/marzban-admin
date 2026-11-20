@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../api.dart';
@@ -29,11 +30,11 @@ class _CoreSettingsScreenState extends State<CoreSettingsScreen> {
 
   Future<void> _restart() async {
     final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-      title: const Text('Restart core?'),
-      content: const Text('Xray ကို restart လုပ်ရင် user အားလုံး ခဏပြတ်သွားပါမယ်။'),
+      title: Text(t('Restart core?')),
+      content: Text('Xray ကို restart လုပ်ရင် user အားလုံး ခဏပြတ်သွားပါမယ်။'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Restart')),
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('Cancel'))),
+        FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(t('Restart'))),
       ],
     ));
     if (ok != true) return;
@@ -41,14 +42,14 @@ class _CoreSettingsScreenState extends State<CoreSettingsScreen> {
     try { await widget.api.restartCore(); } catch (e) { err = MarzbanApi.errorText(e); }
     if (mounted) {
       setState(() => busy = false);
-      if (err == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Core restarted'))); _info(); }
+      if (err == null) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('Core restarted')))); _info(); }
     }
   }
 
   Future<void> _load() async {
     setState(() { loading = true; err = null; });
     try {
-      ctrl.text = const JsonEncoder.withIndent('  ').convert(await widget.api.coreConfig());
+      ctrl.text = JsonEncoder.withIndent('  ').convert(await widget.api.coreConfig());
     } catch (e) { err = MarzbanApi.errorText(e); }
     if (mounted) setState(() => loading = false);
   }
@@ -58,42 +59,42 @@ class _CoreSettingsScreenState extends State<CoreSettingsScreen> {
     try { cfg = Map<String, dynamic>.from(jsonDecode(ctrl.text)); }
     catch (_) { setState(() => err = 'Invalid JSON'); return; }
     final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-      title: const Text('Save & restart core?'),
-      content: const Text('Incorrect config can crash the server. Are you sure?'),
+      title: Text(t('Save & restart core?')),
+      content: Text(t('Incorrect config can crash the server. Are you sure?')),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Save')),
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('Cancel'))),
+        FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(t('Save'))),
       ],
     ));
     if (ok != true) return;
     setState(() { busy = true; err = null; });
     try { await widget.api.setCoreConfig(cfg); } catch (e) { err = MarzbanApi.errorText(e); }
     if (mounted) setState(() => busy = false);
-    if (err == null && mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));
+    if (err == null && mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t('Saved'))));
   }
 
   @override
   Widget build(BuildContext context) => loading
-      ? const Center(child: CircularProgressIndicator())
-      : Padding(padding: const EdgeInsets.all(12), child: Column(children: [
-          if (info.isNotEmpty) Align(alignment: Alignment.centerLeft, child: Text(info, style: const TextStyle(fontSize: 12))),
+      ? Center(child: CircularProgressIndicator())
+      : Padding(padding: EdgeInsets.all(12), child: Column(children: [
+          if (info.isNotEmpty) Align(alignment: Alignment.centerLeft, child: Text(info, style: TextStyle(fontSize: 12))),
           Row(children: [
-            OutlinedButton.icon(onPressed: busy ? null : _restart, icon: const Icon(Icons.restart_alt), label: const Text('Restart core')),
-            const SizedBox(width: 8),
+            OutlinedButton.icon(onPressed: busy ? null : _restart, icon: Icon(Icons.restart_alt), label: Text(t('Restart core'))),
+            SizedBox(width: 8),
             OutlinedButton.icon(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => LogsScreen(api: widget.api))),
-              icon: const Icon(Icons.terminal), label: const Text('Logs')),
+              icon: Icon(Icons.terminal), label: Text(t('Logs'))),
           ]),
-          const SizedBox(height: 8),
-          if (err != null) Text(err!, style: const TextStyle(color: Colors.red)),
+          SizedBox(height: 8),
+          if (err != null) Text(err!, style: TextStyle(color: Colors.red)),
           Expanded(child: TextField(
             controller: ctrl, maxLines: null, expands: true,
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            decoration: const InputDecoration(border: OutlineInputBorder()))),
-          const SizedBox(height: 8),
+            style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+            decoration: InputDecoration(border: OutlineInputBorder()))),
+          SizedBox(height: 8),
           Row(children: [
-            OutlinedButton(onPressed: _load, child: const Text('Reload')),
-            const SizedBox(width: 8),
+            OutlinedButton(onPressed: _load, child: Text(t('Reload'))),
+            SizedBox(width: 8),
             Expanded(child: FilledButton(onPressed: busy ? null : _save, child: Text(busy ? 'Saving...' : 'Save config'))),
           ]),
         ]));

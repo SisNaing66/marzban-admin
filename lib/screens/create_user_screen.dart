@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../api.dart';
@@ -49,11 +50,11 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   Future<void> _savePreset() async {
     final name = TextEditingController();
     final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-      title: const Text('Save as preset'),
-      content: TextField(controller: name, autofocus: true, decoration: const InputDecoration(labelText: 'Preset name', hintText: '1 month 50GB')),
+      title: Text(t('Save as preset')),
+      content: TextField(controller: name, autofocus: true, decoration: InputDecoration(labelText: t('Preset name'), hintText: t('1 month 50GB'))),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Save')),
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('Cancel'))),
+        FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(t('Save'))),
       ],
     ));
     if (ok != true || name.text.trim().isEmpty) return;
@@ -132,8 +133,8 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   Widget build(BuildContext context) {
     final multi = (int.tryParse(count.text.trim()) ?? 1) > 1;
     return Scaffold(
-      appBar: AppBar(title: const Text('Create VPN User')),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
+      appBar: AppBar(title: Text(t('Create VPN User'))),
+      body: ListView(padding: EdgeInsets.all(16), children: [
         if (AppSettings.presets.isNotEmpty) ...[
           Wrap(spacing: 8, runSpacing: 4, children: [
             for (final p in List<Map<String, dynamic>>.from(AppSettings.presets))
@@ -147,47 +148,47 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                 onDeleted: () async { AppSettings.presets.remove(p); await AppSettings.savePresets(); setState(() {}); },
               ),
           ]),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
         ],
         Row(children: [
           Expanded(child: TextField(controller: username,
-              decoration: InputDecoration(labelText: multi ? 'Username prefix' : 'Username', border: const OutlineInputBorder()))),
-          IconButton(tooltip: 'Random', icon: const Icon(Icons.casino), onPressed: () => setState(() => username.text = 'u${_rand(6)}')),
+              decoration: InputDecoration(labelText: multi ? 'Username prefix' : 'Username', border: OutlineInputBorder()))),
+          IconButton(tooltip: t('Random'), icon: Icon(Icons.casino), onPressed: () => setState(() => username.text = 'u${_rand(6)}')),
         ]),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         TextField(controller: count, keyboardType: TextInputType.number, onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(labelText: 'Count (1-100)', helperText: 'ရှိရင် username နောက်မှာ random စာလုံးတွေ ထပ်ထည့်မယ်', border: OutlineInputBorder())),
-        const SizedBox(height: 12),
+            decoration: InputDecoration(labelText: t('Count (1-100)'), helperText: 'ရှိရင် username နောက်မှာ random စာလုံးတွေ ထပ်ထည့်မယ်', border: OutlineInputBorder())),
+        SizedBox(height: 12),
         TextField(controller: gb, keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Data limit (GB) - empty = unlimited', border: OutlineInputBorder())),
-        const SizedBox(height: 12),
+            decoration: InputDecoration(labelText: t('Data limit (GB) - empty = unlimited'), border: OutlineInputBorder())),
+        SizedBox(height: 12),
         TextField(controller: days, keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Valid days - 0 = never expires', border: OutlineInputBorder())),
-        const SizedBox(height: 12),
+            decoration: InputDecoration(labelText: t('Valid days - 0 = never expires'), border: OutlineInputBorder())),
+        SizedBox(height: 12),
         TextField(controller: price, keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Price per user (optional)', helperText: 'ထည့်ရင် ရောင်းချမှတ်တမ်းထဲ မှတ်မယ်', border: OutlineInputBorder())),
-        const SizedBox(height: 12),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('ပေးပြီး (Paid)'), subtitle: const Text('ပိတ်ထားရင် Sales မှာ "Unpaid" အဖြစ် မှတ်မယ်'), value: paid, onChanged: (v) => setState(() => paid = v)),
-        TextField(controller: note, decoration: const InputDecoration(labelText: 'Note', border: OutlineInputBorder())),
+            decoration: InputDecoration(labelText: t('Price per user (optional)'), helperText: 'ထည့်ရင် ရောင်းချမှတ်တမ်းထဲ မှတ်မယ်', border: OutlineInputBorder())),
+        SizedBox(height: 12),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: Text('ပေးပြီး (Paid)'), subtitle: Text('ပိတ်ထားရင် Sales မှာ "Unpaid" အဖြစ် မှတ်မယ်'), value: paid, onChanged: (v) => setState(() => paid = v)),
+        TextField(controller: note, decoration: InputDecoration(labelText: t('Note'), border: OutlineInputBorder())),
         if (others.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text('တခြား server တွေမှာပါ တစ်ခါတည်း ဖန်တီး', style: Theme.of(context).textTheme.titleMedium),
           for (final o in others) CheckboxListTile(
-            dense: true, title: Text(o.name), subtitle: const Text('UUID တူအောင် ကူးထည့်မယ်'),
+            dense: true, title: Text(o.name), subtitle: Text('UUID တူအောင် ကူးထည့်မယ်'),
             value: extra.contains(o.id),
             onChanged: (v) => setState(() => v == true ? extra.add(o.id) : extra.remove(o.id))),
         ],
-        Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: _savePreset, icon: const Icon(Icons.bookmark_add), label: const Text('Save days/GB/price as preset'))),
-        const SizedBox(height: 8),
+        Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: _savePreset, icon: Icon(Icons.bookmark_add), label: Text(t('Save days/GB/price as preset')))),
+        SizedBox(height: 8),
         Text('Inbounds', style: Theme.of(context).textTheme.titleMedium),
-        if (loadingInbounds) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
+        if (loadingInbounds) Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
         for (final e in inbounds.entries) for (final t in e.value)
           CheckboxListTile(
             dense: true, title: Text(t), subtitle: Text(e.key),
             value: selected.contains('${e.key}|$t'),
             onChanged: (v) => setState(() => v == true ? selected.add('${e.key}|$t') : selected.remove('${e.key}|$t'))),
-        if (err != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(err!, style: const TextStyle(color: Colors.red))),
-        const SizedBox(height: 16),
+        if (err != null) Padding(padding: EdgeInsets.only(top: 8), child: Text(err!, style: TextStyle(color: Colors.red))),
+        SizedBox(height: 16),
         FilledButton(onPressed: busy ? null : _create, child: Text(busy ? 'Creating...' : (multi ? 'Create ${count.text.trim()} users' : 'Create'))),
       ]),
     );

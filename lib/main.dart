@@ -14,15 +14,19 @@ Future<void> main() async {
 class MarzbanAdminApp extends StatelessWidget {
   const MarzbanAdminApp({super.key});
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
-        valueListenable: AppSettings.themeMode,
-        builder: (_, mode, __) => MaterialApp(
-          title: 'Marzban Admin',
-          debugShowCheckedModeBanner: false,
-          themeMode: mode,
-          theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
-          darkTheme: ThemeData(colorSchemeSeed: Colors.indigo, brightness: Brightness.dark, useMaterial3: true),
-          home: const AppLockGate(child: HomeShell()),
+  Widget build(BuildContext context) => ValueListenableBuilder<String>(
+        valueListenable: AppSettings.lang,
+        builder: (_, lang, __) => ValueListenableBuilder<ThemeMode>(
+          valueListenable: AppSettings.themeMode,
+          builder: (_, mode, __) => MaterialApp(
+            title: 'Marzban Admin',
+            debugShowCheckedModeBanner: false,
+            themeMode: mode,
+            theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+            darkTheme: ThemeData(colorSchemeSeed: Colors.indigo, brightness: Brightness.dark, useMaterial3: true),
+            // the key rebuilds every screen when the language changes (the lock gate is kept)
+            home: AppLockGate(child: KeyedSubtree(key: ValueKey(lang), child: HomeShell())),
+          ),
         ),
       );
 }

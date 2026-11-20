@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -64,33 +65,33 @@ class _SalesScreenState extends State<SalesScreen> {
     final creates = l.where((s) => s.kind == 'create').length;
     final renews = l.where((s) => s.kind == 'renew').length;
     return Scaffold(
-      appBar: AppBar(title: const Text('Sales'), actions: [
-        IconButton(tooltip: 'Export CSV', icon: const Icon(Icons.ios_share), onPressed: l.isEmpty ? null : () => _csv(l)),
+      appBar: AppBar(title: Text(t('Sales')), actions: [
+        IconButton(tooltip: t('Export CSV'), icon: Icon(Icons.ios_share), onPressed: l.isEmpty ? null : () => _csv(l)),
       ]),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : Column(children: [
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => month = DateTime(month.year, month.month - 1))),
+                IconButton(icon: Icon(Icons.chevron_left), onPressed: () => setState(() => month = DateTime(month.year, month.month - 1))),
                 Text('${month.year}-${month.month.toString().padLeft(2, '0')}', style: Theme.of(context).textTheme.titleMedium),
-                IconButton(icon: const Icon(Icons.chevron_right), onPressed: () => setState(() => month = DateTime(month.year, month.month + 1))),
+                IconButton(icon: Icon(Icons.chevron_right), onPressed: () => setState(() => month = DateTime(month.year, month.month + 1))),
               ]),
-              Card(margin: const EdgeInsets.symmetric(horizontal: 12), child: Padding(padding: const EdgeInsets.all(14), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+              Card(margin: EdgeInsets.symmetric(horizontal: 12), child: Padding(padding: EdgeInsets.all(14), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                 _big('Income', _money(total), Colors.green),
                 _big('Unpaid (all)', _money(unpaid), unpaid > 0 ? Colors.orange : null),
                 _big('New', '$creates', null),
                 _big('Renew', '$renews', null),
               ]))),
-              Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Align(alignment: Alignment.centerLeft, child: FilterChip(
-                label: const Text('Unpaid only'), selected: onlyUnpaid, onSelected: (v) => setState(() => onlyUnpaid = v)))),
+              Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Align(alignment: Alignment.centerLeft, child: FilterChip(
+                label: Text(t('Unpaid only')), selected: onlyUnpaid, onSelected: (v) => setState(() => onlyUnpaid = v)))),
               Expanded(child: l.isEmpty
-                  ? const Center(child: Text('မှတ်တမ်း မရှိသေးပါ\n(Create/Renew လုပ်ချိန် Price ထည့်ရင် ဒီမှာ မှတ်မယ်)', textAlign: TextAlign.center))
+                  ? Center(child: Text('မှတ်တမ်း မရှိသေးပါ\n(Create/Renew လုပ်ချိန် Price ထည့်ရင် ဒီမှာ မှတ်မယ်)', textAlign: TextAlign.center))
                   : ListView.builder(itemCount: l.length, itemBuilder: (_, i) {
                       final s = l[i];
                       return Dismissible(
                         key: ValueKey('${s.ts}${s.user}${s.kind}$i'),
                         direction: DismissDirection.endToStart,
-                        background: Container(color: Colors.red, alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 16), child: const Icon(Icons.delete, color: Colors.white)),
+                        background: Container(color: Colors.red, alignment: Alignment.centerRight, padding: EdgeInsets.only(right: 16), child: Icon(Icons.delete, color: Colors.white)),
                         onDismissed: (_) => _delete(s),
                         child: ListTile(
                           dense: true,
@@ -98,10 +99,10 @@ class _SalesScreenState extends State<SalesScreen> {
                           title: Text(s.user),
                           subtitle: Text('${_d(s.ts)}  •  ${s.server}${s.days > 0 ? '  •  ${s.days}d' : ''}${s.gb > 0 ? '  •  +${s.gb}GB' : ''}'),
                           trailing: s.paid
-                              ? Text(_money(s.amount), style: const TextStyle(fontWeight: FontWeight.w600))
+                              ? Text(_money(s.amount), style: TextStyle(fontWeight: FontWeight.w600))
                               : Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Text(_money(s.amount), style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.orange)),
-                                  IconButton(tooltip: 'Mark paid', icon: const Icon(Icons.check_circle_outline, color: Colors.green), onPressed: () => _markPaid(s)),
+                                  Text(_money(s.amount), style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange)),
+                                  IconButton(tooltip: t('Mark paid'), icon: Icon(Icons.check_circle_outline, color: Colors.green), onPressed: () => _markPaid(s)),
                                 ]),
                         ),
                       );
@@ -112,6 +113,6 @@ class _SalesScreenState extends State<SalesScreen> {
 
   Widget _big(String k, String v, Color? c) => Column(children: [
         Text(v, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: c)),
-        Text(k, style: const TextStyle(fontSize: 12)),
+        Text(t(k), style: TextStyle(fontSize: 12)),
       ]);
 }

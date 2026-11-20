@@ -9,6 +9,7 @@ const defaultTemplate = 'မင်္ဂလာပါ {name}\n\nUsername: {userna
 
 class AppSettings {
   static final themeMode = ValueNotifier<ThemeMode>(ThemeMode.system);
+  static final lang = ValueNotifier<String>('my'); // my | en
   static String template = defaultTemplate;
   static String? pinHash;
   static bool alertsOn = false;
@@ -22,6 +23,7 @@ class AppSettings {
   static Future<void> load() async {
     final p = await SharedPreferences.getInstance();
     themeMode.value = ThemeMode.values[(p.getInt('theme') ?? 0).clamp(0, 2)];
+    lang.value = p.getString('lang') ?? 'my';
     template = p.getString('template') ?? defaultTemplate;
     pinHash = p.getString('pin');
     alertsOn = p.getBool('alerts') ?? false;
@@ -40,6 +42,11 @@ class AppSettings {
   static Future<void> setTheme(ThemeMode m) async {
     themeMode.value = m;
     (await SharedPreferences.getInstance()).setInt('theme', m.index);
+  }
+
+  static Future<void> setLang(String v) async {
+    lang.value = v;
+    (await SharedPreferences.getInstance()).setString('lang', v);
   }
 
   static Future<void> setTemplate(String t) async {

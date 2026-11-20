@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
@@ -34,15 +35,15 @@ class ServerListScreenState extends State<ServerListScreen> {
       builder: (ctx) => StatefulBuilder(builder: (ctx, set) => AlertDialog(
         title: Text(s == null ? 'Add Server' : 'Edit Server'),
         content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: name, decoration: const InputDecoration(labelText: 'Server name')),
+          TextField(controller: name, decoration: InputDecoration(labelText: t('Server name'))),
           TextField(controller: url, keyboardType: TextInputType.url,
-              decoration: const InputDecoration(labelText: 'Panel URL', hintText: 'https://panel.example.com:8000')),
-          TextField(controller: user, decoration: const InputDecoration(labelText: 'Admin username')),
-          TextField(controller: pass, obscureText: true, decoration: const InputDecoration(labelText: 'Admin password')),
-          if (err != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(err!, style: const TextStyle(color: Colors.red))),
+              decoration: InputDecoration(labelText: 'Panel URL', hintText: 'https://panel.example.com:8000')),
+          TextField(controller: user, decoration: InputDecoration(labelText: t('Admin username'))),
+          TextField(controller: pass, obscureText: true, decoration: InputDecoration(labelText: t('Admin password'))),
+          if (err != null) Padding(padding: EdgeInsets.only(top: 8), child: Text(err!, style: TextStyle(color: Colors.red))),
         ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('Cancel'))),
           FilledButton(
             onPressed: busy ? null : () async {
               final c = ServerConfig(id: s?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
@@ -70,11 +71,11 @@ class ServerListScreenState extends State<ServerListScreen> {
 
   Future<void> _delete(ServerConfig s) async {
     final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-      title: const Text('Delete Server?'),
+      title: Text(t('Delete Server?')),
       content: Text('Remove "${s.name}" from this app? (The panel itself is not touched.)'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Delete')),
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t('Cancel'))),
+        FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(t('Delete'))),
       ],
     ));
     if (ok == true) { servers.remove(s); await Storage.save(servers); setState(() {}); }
@@ -82,30 +83,30 @@ class ServerListScreenState extends State<ServerListScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Servers')),
+        appBar: AppBar(title: Text(t('Servers'))),
         floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _edit(), icon: const Icon(Icons.add), label: const Text('Add Server')),
+            onPressed: () => _edit(), icon: Icon(Icons.add), label: Text(t('Add Server'))),
         body: loading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : servers.isEmpty
-                ? const Center(child: Text('No servers found'))
+                ? Center(child: Text(t('No servers found')))
                 : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 90),
+                    padding: EdgeInsets.only(bottom: 90),
                     itemCount: servers.length,
                     itemBuilder: (_, i) {
                       final s = servers[i];
                       return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         child: ListTile(
-                          leading: const Icon(Icons.dns),
+                          leading: Icon(Icons.dns),
                           title: Text(s.name),
                           subtitle: Text(s.url),
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ServerHomeScreen(server: s))),
                           trailing: PopupMenuButton<String>(
                             onSelected: (v) => v == 'edit' ? _edit(s) : _delete(s),
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(value: 'edit', child: Text('Edit')),
-                              PopupMenuItem(value: 'del', child: Text('Delete')),
+                            itemBuilder: (_) => [
+                              PopupMenuItem(value: 'edit', child: Text(t('Edit'))),
+                              PopupMenuItem(value: 'del', child: Text(t('Delete'))),
                             ],
                           ),
                         ),

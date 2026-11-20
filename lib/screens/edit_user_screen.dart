@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
@@ -41,8 +42,8 @@ class _EditUserScreenState extends State<EditUserScreen> {
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final d = await showDatePicker(
-        context: context, initialDate: (expire != null && expire!.isAfter(now)) ? expire! : now.add(const Duration(days: 30)),
-        firstDate: now.subtract(const Duration(days: 365)), lastDate: now.add(const Duration(days: 3650)));
+        context: context, initialDate: (expire != null && expire!.isAfter(now)) ? expire! : now.add(Duration(days: 30)),
+        firstDate: now.subtract(Duration(days: 365)), lastDate: now.add(Duration(days: 3650)));
     if (d != null) setState(() => expire = DateTime(d.year, d.month, d.day, 23, 59));
   }
 
@@ -79,41 +80,41 @@ class _EditUserScreenState extends State<EditUserScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: Text('Edit ${u.username}')),
-        body: ListView(padding: const EdgeInsets.all(16), children: [
-          SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Enabled'), value: enabled, onChanged: (v) => setState(() => enabled = v)),
-          const SizedBox(height: 8),
+        body: ListView(padding: EdgeInsets.all(16), children: [
+          SwitchListTile(contentPadding: EdgeInsets.zero, title: Text(t('Enabled')), value: enabled, onChanged: (v) => setState(() => enabled = v)),
+          SizedBox(height: 8),
           TextField(controller: gb, keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Data limit (GB) - empty = unlimited', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
+              decoration: InputDecoration(labelText: t('Data limit (GB) - empty = unlimited'), border: OutlineInputBorder())),
+          SizedBox(height: 12),
           InputDecorator(
-            decoration: const InputDecoration(labelText: 'Expire date', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: t('Expire date'), border: OutlineInputBorder()),
             child: Row(children: [
               Expanded(child: Text(expire == null ? 'No expiry' : expire.toString().substring(0, 10))),
-              TextButton(onPressed: _pickDate, child: const Text('Pick date')),
-              if (expire != null) TextButton(onPressed: () => setState(() => expire = null), child: const Text('No expiry')),
+              TextButton(onPressed: _pickDate, child: Text(t('Pick date'))),
+              if (expire != null) TextButton(onPressed: () => setState(() => expire = null), child: Text(t('No expiry'))),
             ]),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           DropdownButtonFormField<String>(
             value: strategy,
-            decoration: const InputDecoration(labelText: 'Data limit reset', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: t('Data limit reset'), border: OutlineInputBorder()),
             items: [for (final s in strategies) DropdownMenuItem(value: s, child: Text(s))],
             onChanged: (v) => setState(() => strategy = v ?? 'no_reset'),
           ),
-          const SizedBox(height: 12),
-          TextField(controller: note, decoration: const InputDecoration(labelText: 'Note', border: OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: contact, decoration: const InputDecoration(labelText: 'Contact (ဖုန်း / @telegram)', helperText: 'ဒီဖုန်းထဲမှာပဲ သိမ်းမယ် (panel ကို မပို့ပါ)', border: OutlineInputBorder())),
-          const SizedBox(height: 16),
+          SizedBox(height: 12),
+          TextField(controller: note, decoration: InputDecoration(labelText: t('Note'), border: OutlineInputBorder())),
+          SizedBox(height: 12),
+          TextField(controller: contact, decoration: InputDecoration(labelText: 'Contact (ဖုန်း / @telegram)', helperText: 'ဒီဖုန်းထဲမှာပဲ သိမ်းမယ် (panel ကို မပို့ပါ)', border: OutlineInputBorder())),
+          SizedBox(height: 16),
           Text('Inbounds', style: Theme.of(context).textTheme.titleMedium),
-          if (!inboundsLoaded) const Padding(padding: EdgeInsets.all(12), child: Text('Loading... (မ load ရင် inbound ကို မပြောင်းဘဲ ကျန်တာပဲ သိမ်းမယ်)', style: TextStyle(fontSize: 12))),
+          if (!inboundsLoaded) Padding(padding: EdgeInsets.all(12), child: Text('Loading... (မ load ရင် inbound ကို မပြောင်းဘဲ ကျန်တာပဲ သိမ်းမယ်)', style: TextStyle(fontSize: 12))),
           for (final e in inbounds.entries) for (final t in e.value)
             CheckboxListTile(
               dense: true, title: Text(t), subtitle: Text(e.key),
               value: selected.contains('${e.key}|$t'),
               onChanged: (v) => setState(() => v == true ? selected.add('${e.key}|$t') : selected.remove('${e.key}|$t'))),
-          if (err != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(err!, style: const TextStyle(color: Colors.red))),
-          const SizedBox(height: 16),
+          if (err != null) Padding(padding: EdgeInsets.only(top: 8), child: Text(err!, style: TextStyle(color: Colors.red))),
+          SizedBox(height: 16),
           FilledButton(onPressed: busy ? null : _save, child: Text(busy ? 'Saving...' : 'Save')),
         ]),
       );

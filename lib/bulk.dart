@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'api.dart';
@@ -18,7 +19,7 @@ Future<BulkResult> runBulk<T>(BuildContext context, String title, List<T> items,
       content: ValueListenableBuilder<String>(
         valueListenable: progress,
         builder: (_, v, __) => Column(mainAxisSize: MainAxisSize.min, children: [
-          const LinearProgressIndicator(), const SizedBox(height: 12), Text(v)]),
+          LinearProgressIndicator(), SizedBox(height: 12), Text(v)]),
       ),
     )),
   );
@@ -53,12 +54,12 @@ Future<void> showBulkResult(BuildContext context, String title, BulkResult r, {S
       title: Text(title),
       content: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('OK: ${r.ok}    Failed: ${r.failed}'),
-        if (r.errors.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(r.errors.take(10).join('\n'), style: const TextStyle(color: Colors.red, fontSize: 12))),
-        if (extra != null) Padding(padding: const EdgeInsets.only(top: 8), child: SelectableText(extra, style: const TextStyle(fontSize: 12))),
+        if (r.errors.isNotEmpty) Padding(padding: EdgeInsets.only(top: 8), child: Text(r.errors.take(10).join('\n'), style: TextStyle(color: Colors.red, fontSize: 12))),
+        if (extra != null) Padding(padding: EdgeInsets.only(top: 8), child: SelectableText(extra, style: TextStyle(fontSize: 12))),
       ])),
       actions: [
-        if (extra != null) TextButton(onPressed: () => Clipboard.setData(ClipboardData(text: extra)), child: const Text('Copy')),
-        TextButton(onPressed: () => Navigator.pop(c), child: const Text('OK')),
+        if (extra != null) TextButton(onPressed: () => Clipboard.setData(ClipboardData(text: extra)), child: Text(t('Copy'))),
+        TextButton(onPressed: () => Navigator.pop(c), child: Text(t('OK'))),
       ],
     ),
   );

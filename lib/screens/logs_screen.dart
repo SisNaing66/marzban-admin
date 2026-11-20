@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,17 +57,17 @@ class _LogsScreenState extends State<LogsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Core logs'), actions: [
+        appBar: AppBar(title: Text(t('Core logs')), actions: [
           IconButton(tooltip: paused ? 'Resume' : 'Pause', icon: Icon(paused ? Icons.play_arrow : Icons.pause), onPressed: () => setState(() => paused = !paused)),
-          IconButton(tooltip: 'Copy', icon: const Icon(Icons.copy), onPressed: () => Clipboard.setData(ClipboardData(text: lines.join('\n')))),
-          IconButton(tooltip: 'Clear', icon: const Icon(Icons.delete_outline), onPressed: () => setState(lines.clear)),
+          IconButton(tooltip: t('Copy'), icon: Icon(Icons.copy), onPressed: () => Clipboard.setData(ClipboardData(text: lines.join('\n')))),
+          IconButton(tooltip: t('Clear'), icon: Icon(Icons.delete_outline), onPressed: () => setState(lines.clear)),
         ]),
         body: err != null && lines.isEmpty
-            ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text('Log မရပါ: $err', textAlign: TextAlign.center)))
+            ? Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Log မရပါ: $err', textAlign: TextAlign.center)))
             : lines.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator())
                 : ListView.builder(
-                    controller: scroll, padding: const EdgeInsets.all(8), itemCount: lines.length,
-                    itemBuilder: (_, i) => Text(lines[i], style: const TextStyle(fontFamily: 'monospace', fontSize: 11))),
+                    controller: scroll, padding: EdgeInsets.all(8), itemCount: lines.length,
+                    itemBuilder: (_, i) => Text(lines[i], style: TextStyle(fontFamily: 'monospace', fontSize: 11))),
       );
 }

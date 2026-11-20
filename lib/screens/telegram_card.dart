@@ -1,3 +1,4 @@
+import '../i18n.dart';
 import 'package:flutter/material.dart';
 import '../background.dart';
 import '../settings.dart';
@@ -38,30 +39,30 @@ class _TelegramCardState extends State<TelegramCard> {
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Telegram bot', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        const Text('Alerts နဲ့ backup ဖိုင်ကို Telegram ကို ပို့မယ်။ Token ကို ဒီဖုန်းထဲမှာပဲ သိမ်းတယ်။', style: TextStyle(fontSize: 12)),
-        const SizedBox(height: 8),
+        SizedBox(height: 4),
+        Text('Alerts နဲ့ backup ဖိုင်ကို Telegram ကို ပို့မယ်။ Token ကို ဒီဖုန်းထဲမှာပဲ သိမ်းတယ်။', style: TextStyle(fontSize: 12)),
+        SizedBox(height: 8),
         TextField(
           controller: token, obscureText: hideToken, autocorrect: false, enableSuggestions: false,
           decoration: InputDecoration(
-            labelText: 'Bot token', border: const OutlineInputBorder(),
+            labelText: 'Bot token', border: OutlineInputBorder(),
             suffixIcon: IconButton(icon: Icon(hideToken ? Icons.visibility : Icons.visibility_off), onPressed: () => setState(() => hideToken = !hideToken))),
         ),
-        const SizedBox(height: 8),
-        TextField(controller: chat, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Chat id', border: OutlineInputBorder())),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Alerts ကို Telegram ကိုပါ ပို့'), value: alerts, onChanged: (v) { setState(() => alerts = v); _save(); }),
-        SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Backup ဖိုင်ကို တစ်ရက်တစ်ခါ ပို့'), subtitle: const Text('Alerts (background check) ဖွင့်ထားမှ အလုပ်လုပ်မယ်'), value: backup, onChanged: (v) { setState(() => backup = v); _save(); }),
+        SizedBox(height: 8),
+        TextField(controller: chat, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Chat id', border: OutlineInputBorder())),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: Text('Alerts ကို Telegram ကိုပါ ပို့'), value: alerts, onChanged: (v) { setState(() => alerts = v); _save(); }),
+        SwitchListTile(contentPadding: EdgeInsets.zero, title: Text('Backup ဖိုင်ကို တစ်ရက်တစ်ခါ ပို့'), subtitle: Text('Alerts (background check) ဖွင့်ထားမှ အလုပ်လုပ်မယ်'), value: backup, onChanged: (v) { setState(() => backup = v); _save(); }),
         Wrap(spacing: 8, children: [
           FilledButton.icon(
             onPressed: busy ? null : () => _run(() async {
               await Telegram.send(AppSettings.tgToken, AppSettings.tgChat, 'Marzban Admin ✓ Telegram ချိတ်ဆက်မှု အောင်မြင်ပါတယ်');
               return 'Test စာ ပို့ပြီး';
             }),
-            icon: const Icon(Icons.send), label: const Text('Test')),
+            icon: Icon(Icons.send), label: Text(t('Test'))),
           OutlinedButton.icon(
             onPressed: busy ? null : () => _run(telegramBackupAll),
-            icon: const Icon(Icons.cloud_upload), label: const Text('Backup now')),
+            icon: Icon(Icons.cloud_upload), label: Text(t('Backup now'))),
         ]),
-        if (busy) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
+        if (busy) Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
       ]);
 }
