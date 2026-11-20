@@ -84,6 +84,7 @@ class StatsTab extends StatefulWidget {
 
 class _StatsTabState extends State<StatsTab> {
   Map<String, dynamic>? s;
+  int? usersUsage;
   String? err;
 
   @override
@@ -93,6 +94,11 @@ class _StatsTabState extends State<StatsTab> {
     try {
       final r = await widget.api.system();
       if (mounted) setState(() { s = r; err = null; });
+      try {
+        final us = await widget.api.users();
+        final sum = us.fold<int>(0, (a, u) => a + u.usedTraffic);
+        if (mounted) setState(() => usersUsage = sum);
+      } catch (_) {}
     } catch (e) {
       if (mounted) setState(() => err = 'Failed to load server stats: ${MarzbanApi.errorText(e)}');
     }
@@ -115,6 +121,8 @@ class _StatsTabState extends State<StatsTab> {
         tile('Active users', '${s!['users_active']}', Icons.check_circle),
         tile('Incoming', fmtBytes(s!['incoming_bandwidth'] ?? 0), Icons.download),
         tile('Outgoing', fmtBytes(s!['outgoing_bandwidth'] ?? 0), Icons.upload),
+        tile('Total traffic', fmtBytes(((s!['incoming_bandwidth'] ?? 0) as num) + ((s!['outgoing_bandwidth'] ?? 0) as num)), Icons.swap_vert),
+        tile('Users usage', usersUsage == null ? '...' : fmtBytes(usersUsage!), Icons.data_usage),
       ]),
     );
   }

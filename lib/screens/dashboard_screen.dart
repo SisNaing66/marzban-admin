@@ -136,6 +136,8 @@ class DashboardScreenState extends State<DashboardScreen> {
               _chip(Icons.wifi, '${sys['online_users'] ?? '-'} online', c: Colors.blue),
               _chip(Icons.schedule, '${s.expiring} ≤3d', c: s.expiring > 0 ? Colors.orange : null),
               _chip(Icons.data_usage, '${s.near} ≥90%', c: s.near > 0 ? Colors.deepOrange : null),
+              _chip(Icons.swap_vert, '${t('Total traffic')} ${fmtBytes(((sys['incoming_bandwidth'] ?? 0) as num) + ((sys['outgoing_bandwidth'] ?? 0) as num))}'),
+              _chip(Icons.data_usage, '${t('Users usage')} ${fmtBytes((s.users ?? []).fold<int>(0, (a, u) => a + u.usedTraffic))}'),
               _chip(Icons.memory, 'CPU ${sys['cpu_usage']}%'),
               _chip(Icons.storage, 'RAM ${fmtBytes((sys['mem_used'] ?? 0) as num)} / ${fmtBytes((sys['mem_total'] ?? 0) as num)}'),
             ]),
