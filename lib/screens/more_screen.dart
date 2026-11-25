@@ -4,6 +4,7 @@ import '../background.dart';
 import '../backup_io.dart';
 import '../biometric.dart';
 import '../settings.dart';
+import 'guide_screen.dart';
 import 'sales_screen.dart';
 import 'telegram_card.dart';
 
@@ -102,6 +103,9 @@ class _MoreScreenState extends State<MoreScreen> {
               onSelectionChanged: (s) => AppSettings.setTheme(s.first),
             ),
           ),
+          ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.menu_book), title: Text(t('How to run')),
+              subtitle: Text('Run နည်း၊ Script၊ ပုံနဲ့ အဆင့်ဆင့် လမ်းညွှန်'),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GuideListScreen()))),
           Divider(height: 32),
           TelegramCard(),
           Divider(height: 32),

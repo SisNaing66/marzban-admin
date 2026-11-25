@@ -136,6 +136,7 @@ const _my = <String, String>{
   'Active users': 'Active user',
   'Incoming': 'ဝင်လာ',
   'Outgoing': 'ထွက်သွား',
+  'How to run': 'Run နည်း ကြည့်ရန်',
   'Total traffic': 'Traffic စုစုပေါင်း',
   'Users usage': 'User သုံးစွဲမှု',
   'Language': 'ဘာသာစကား',
