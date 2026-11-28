@@ -18,6 +18,7 @@ class AppSettings {
   static String remindTemplate = defaultRemind;
   static Map<String, String> contacts = {}; // "serverId|username" -> phone / @telegram (kept on this phone only)
   static bool biometric = false;
+  static String hubUrl = 'https://hub.tulipvip69.com', hubUser = '', hubPass = '', hubFront = 'https://vip.lovetulip69.com';
   static List<Map<String, dynamic>> presets = []; // {name, days, gb, price}
 
   static Future<void> load() async {
@@ -35,6 +36,10 @@ class AppSettings {
     final ct = p.getString('contacts');
     if (ct != null) contacts = Map<String, String>.from(jsonDecode(ct));
     biometric = p.getBool('bio') ?? false;
+    hubUrl = p.getString('hub_url') ?? hubUrl;
+    hubUser = p.getString('hub_user') ?? '';
+    hubPass = p.getString('hub_pass') ?? '';
+    hubFront = p.getString('hub_front') ?? hubFront;
     final pr = p.getString('presets');
     if (pr != null) presets = (jsonDecode(pr) as List).map((e) => Map<String, dynamic>.from(e)).toList();
   }
@@ -47,6 +52,16 @@ class AppSettings {
   static Future<void> setLang(String v) async {
     lang.value = v;
     (await SharedPreferences.getInstance()).setString('lang', v);
+  }
+
+  static Future<void> saveHub({required String url, required String user, required String pass, required String front}) async {
+    hubUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
+    hubUser = user.trim(); hubPass = pass; hubFront = front.trim().replaceAll(RegExp(r'/+$'), '');
+    final p = await SharedPreferences.getInstance();
+    await p.setString('hub_url', hubUrl);
+    await p.setString('hub_user', hubUser);
+    await p.setString('hub_pass', hubPass);
+    await p.setString('hub_front', hubFront);
   }
 
   static Future<void> setTemplate(String t) async {
