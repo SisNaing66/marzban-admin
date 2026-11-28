@@ -44,6 +44,20 @@ class HubApi {
     return list.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
+  /// Merged (all-servers) users only.
+  Future<List<Map<String, dynamic>>> mergedUsers() async {
+    final d = (await _req('GET', '/users')).data;
+    final list = d is List ? d : (d is Map && d['users'] is List ? d['users'] as List : <dynamic>[]);
+    return list.map((e) => Map<String, dynamic>.from(e)).where((u) => u['merged'] == true).toList();
+  }
+
+  Future<void> extendGroup(String u, {double gb = 0, int days = 0}) =>
+      _req('POST', '/groups/$u/extend', data: {'add_gb': gb, 'add_days': days});
+  Future<void> setGroupStatus(String u, bool active) =>
+      _req('POST', '/groups/$u/status', data: {'status': active ? 'active' : 'disabled'});
+  Future<void> resetGroup(String u) => _req('POST', '/groups/$u/reset');
+  Future<void> deleteGroup(String u) => _req('DELETE', '/groups/$u');
+
   /// Returns the raw JSON the hub answers with.
   Future<dynamic> createMerged({
     required List<int> serverIds, required String username, String customerName = '',

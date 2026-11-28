@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../hub.dart';
+import '../models.dart';
 import '../settings.dart';
 
 class HubScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _HubScreenState extends State<HubScreen> {
   final days = TextEditingController(text: '30');
 
   List<Map<String, dynamic>>? servers;
+  List<Map<String, dynamic>> merged = [];
   final picked = <int>{};
   String? status;
   bool busy = false;
@@ -39,7 +41,9 @@ class _HubScreenState extends State<HubScreen> {
   Future<void> _loadServers() async {
     setState(() { busy = true; status = null; });
     try {
-      final s = await HubApi().servers();
+      final api = HubApi();
+      final s = await api.servers();
+      try { merged = await api.mergedUsers(); } catch (_) {}
       setState(() { servers = s; picked..clear()..addAll(s.map((e) => e['id'] as int)); status = 'ချိတ်ပြီး — Server ${s.length} ခု'; });
     } catch (e) {
       setState(() { servers = null; status = 'မအောင်မြင်ပါ: ${HubApi.err(e)}'; });
@@ -51,8 +55,8 @@ class _HubScreenState extends State<HubScreen> {
   Future<void> _create() async {
     final name = uname.text.trim();
     final g = double.tryParse(gb.text.trim());
-    if (name.isEmpty || g == null || g <= 0 || picked.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Username၊ GB နဲ့ Server အနည်းဆုံး ၁ ခု ရွေးပါ')));
+    if (name.isEmpty || g == null || g <= 0 || picked.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Username၊ GB ထည့်ပြီး Server အနည်းဆုံး ၂ ခု ရွေးပါ')));
       return;
     }
     setState(() => busy = true);
@@ -62,6 +66,7 @@ class _HubScreenState extends State<HubScreen> {
           days: int.tryParse(days.text.trim()));
       if (!mounted) return;
       _showResult(name, resp);
+      try { final m = await HubApi().mergedUsers(); if (mounted) setState(() => merged = m); } catch (_) {}
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('မအောင်မြင်ပါ: ${HubApi.err(e)}')));
     } finally {
@@ -92,6 +97,96 @@ class _HubScreenState extends State<HubScreen> {
           TextButton(onPressed: () => Share.share(msg), child: Text('ပို့မယ်')),
           FilledButton(onPressed: () => Navigator.pop(context), child: Text('ပိတ်')),
         ],
+      ),
+    );
+  }
+
+  Future<void> _act(String label, Future<void> Function() f) async {
+    setState(() => busy = true);
+    try {
+      await f();
+      final m = await HubApi().mergedUsers();
+      if (mounted) {
+        setState(() => merged = m);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label ပြီးပါပြီ')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('မအောင်မြင်ပါ: ${HubApi.err(e)}')));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _renew(Map<String, dynamic> u) async {
+    final g = TextEditingController(text: '0'), d = TextEditingController(text: '30');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('${u['username']} — Renew'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: g, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'GB ထပ်တိုး (စုစုပေါင်းကို)')),
+          TextField(controller: d, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'ရက် ထပ်တိုး')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('မလုပ်တော့ပါ')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text('Renew')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await _act('Renew', () => HubApi().extendGroup(u['username'], gb: double.tryParse(g.text) ?? 0, days: int.tryParse(d.text) ?? 0));
+  }
+
+  Future<void> _confirm(String msg, Future<void> Function() f, String label) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        content: Text(msg),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('မလုပ်တော့ပါ')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text('သေချာတယ်')),
+        ],
+      ),
+    );
+    if (ok == true) await _act(label, f);
+  }
+
+  Widget _mergedCard(Map<String, dynamic> u) {
+    final name = '${u['username']}';
+    final used = (u['used_traffic'] ?? 0) as num, limit = (u['data_limit'] ?? 0) as num;
+    final exp = u['expire'] as num?;
+    final daysLeft = exp == null || exp == 0 ? null : ((exp - DateTime.now().millisecondsSinceEpoch / 1000) / 86400).ceil();
+    final status = '${u['status']}';
+    final active = status == 'active';
+    final link = '${u['subscription_url'] ?? '${AppSettings.hubFront}/vip/$name'}';
+    final srv = (u['servers'] is List) ? (u['servers'] as List).join(', ') : '';
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16))),
+            Text(status, style: TextStyle(color: active ? Colors.green : Colors.red, fontSize: 12)),
+          ]),
+          if (srv.isNotEmpty) Text(srv, style: TextStyle(fontSize: 12)),
+          SizedBox(height: 6),
+          LinearProgressIndicator(value: limit > 0 ? (used / limit).clamp(0, 1).toDouble() : 0),
+          SizedBox(height: 4),
+          Text('${fmtBytes(used)} / ${limit > 0 ? fmtBytes(limit) : '∞'}'
+              '${daysLeft == null ? '' : '  ·  ရက်ကျန် $daysLeft'}', style: TextStyle(fontSize: 12)),
+          Wrap(spacing: 4, children: [
+            TextButton(onPressed: () => Clipboard.setData(ClipboardData(text: link)), child: Text('Link Copy')),
+            TextButton(onPressed: () => Share.share('Username: $name\nLink:\n$link'), child: Text('ပို့')),
+            TextButton(onPressed: busy ? null : () => _renew(u), child: Text('Renew')),
+            TextButton(
+                onPressed: busy ? null : () => _act(active ? 'ပိတ်' : 'ဖွင့်', () => HubApi().setGroupStatus(name, !active)),
+                child: Text(active ? 'ပိတ်' : 'ဖွင့်')),
+            TextButton(onPressed: busy ? null : () => _confirm('$name ရဲ့ သုံးစွဲမှုကို သုညပြန်လုပ်မလား?', () => HubApi().resetGroup(name), 'Reset'), child: Text('Reset')),
+            TextButton(
+                onPressed: busy ? null : () => _confirm('$name ကို Server အားလုံးကနေ ဖျက်မလား? ပြန်မရပါ။', () => HubApi().deleteGroup(name), 'ဖျက်'),
+                child: Text('ဖျက်', style: TextStyle(color: Colors.red))),
+          ]),
+        ]),
       ),
     );
   }
@@ -144,6 +239,13 @@ class _HubScreenState extends State<HubScreen> {
             SizedBox(height: 8),
             Text('စုစုပေါင်း GB ပြည့်ရင် Server အားလုံးမှာ Hub က ၅ မိနစ်ခြား စစ်ပြီး ပိတ်ပေးပါမယ်။',
                 style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline)),
+            Divider(height: 32),
+            Row(children: [
+              Expanded(child: Text('Merged User များ (${merged.length})', style: Theme.of(context).textTheme.titleMedium)),
+              IconButton(onPressed: busy ? null : _loadServers, icon: Icon(Icons.refresh)),
+            ]),
+            if (merged.isEmpty) Text('မရှိသေးပါ', style: TextStyle(fontSize: 12)),
+            for (final u in merged) _mergedCard(u),
           ],
         ]),
       );
